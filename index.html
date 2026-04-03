@@ -1,0 +1,2712 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+<title>D'station新栄店 M&A投資判断シミュレーター v3.0</title>
+<style>
+/* ============================================================
+   DESIGN SYSTEM - McKinsey/BCG Clean Business
+   ============================================================ */
+:root {
+  --bg: #FFFFFF;
+  --text: #333333;
+  --heading: #002060;
+  --primary: #1B3A5C;
+  --go: #00B050;
+  --conditional: #BF8F00;
+  --nogo: #C00000;
+  --input-bg: #FFFFCC;
+  --section-bg: #F0F4F8;
+  --card-bg: #F8F9FA;
+  --border: #D0D0D0;
+  --blue: #4472C4;
+  --orange: #ED7D31;
+  --light-gray: #E0E0E0;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Helvetica Neue', Arial, 'Hiragino Sans', 'Meiryo', sans-serif;
+  font-size: 14px;
+  color: var(--text);
+  background: var(--bg);
+  line-height: 1.6;
+}
+
+/* ============================================================
+   HEADER
+   ============================================================ */
+.header {
+  background: var(--heading);
+  color: #fff;
+  padding: 12px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.header h1 {
+  font-size: 18px;
+  font-weight: 700;
+}
+.mode-toggle {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.mode-toggle label {
+  cursor: pointer;
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  background: rgba(255,255,255,0.15);
+  transition: background 0.2s;
+}
+.mode-toggle input { display: none; }
+.mode-toggle input:checked + span {
+  background: #fff;
+  color: var(--heading);
+  font-weight: 700;
+}
+.mode-toggle label span {
+  padding: 4px 12px;
+  border-radius: 4px;
+  display: inline-block;
+}
+
+/* ============================================================
+   CSS-ONLY TABS (radio + :checked)
+   ============================================================ */
+input[name="tab"] { display: none; }
+
+.tab-nav {
+  display: flex;
+  background: #f5f5f5;
+  border-bottom: 2px solid var(--border);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.tab-nav label {
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #666;
+  cursor: pointer;
+  white-space: nowrap;
+  border-bottom: 3px solid transparent;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+.tab-nav label:hover { color: var(--primary); }
+
+.tab-panel { display: none; padding: 16px; }
+
+#tab1:checked ~ .tab-nav label[for="tab1"],
+#tab2:checked ~ .tab-nav label[for="tab2"],
+#tab3:checked ~ .tab-nav label[for="tab3"],
+#tab4:checked ~ .tab-nav label[for="tab4"],
+#tab5:checked ~ .tab-nav label[for="tab5"],
+#tab6:checked ~ .tab-nav label[for="tab6"],
+#tab7:checked ~ .tab-nav label[for="tab7"] {
+  color: var(--heading);
+  border-bottom-color: var(--heading);
+  background: #fff;
+}
+
+#tab1:checked ~ .panels #panel1,
+#tab2:checked ~ .panels #panel2,
+#tab3:checked ~ .panels #panel3,
+#tab4:checked ~ .panels #panel4,
+#tab5:checked ~ .panels #panel5,
+#tab6:checked ~ .panels #panel6,
+#tab7:checked ~ .panels #panel7 { display: block; }
+
+/* ============================================================
+   KPI CARDS
+   ============================================================ */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  margin: 16px 0;
+}
+.kpi-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  text-align: center;
+  transition: box-shadow 0.2s;
+}
+.kpi-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+.kpi-card .kpi-label {
+  font-size: 11px;
+  color: #888;
+  font-weight: 600;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.kpi-card .kpi-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--heading);
+}
+.kpi-card .kpi-sub {
+  font-size: 11px;
+  color: #999;
+  margin-top: 2px;
+}
+.kpi-card .kpi-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 700;
+  margin-top: 4px;
+}
+.badge-go { background: #e6f7ee; color: var(--go); }
+.badge-cond { background: #fef3cd; color: var(--conditional); }
+.badge-nogo { background: #fde8e8; color: var(--nogo); }
+
+/* ============================================================
+   GO/NO-GO JUDGMENT PANEL
+   ============================================================ */
+.judgment-panel {
+  text-align: center;
+  padding: 24px;
+  border-radius: 12px;
+  margin-bottom: 16px;
+  position: relative;
+  overflow: hidden;
+}
+.judgment-panel.go { background: linear-gradient(135deg, #e6f7ee, #d4edda); border: 2px solid var(--go); }
+.judgment-panel.cond { background: linear-gradient(135deg, #fef9e7, #fef3cd); border: 2px solid var(--conditional); }
+.judgment-panel.nogo { background: linear-gradient(135deg, #fde8e8, #f8d7da); border: 2px solid var(--nogo); }
+
+.judgment-label {
+  font-size: 42px;
+  font-weight: 700;
+  letter-spacing: 4px;
+}
+.judgment-panel.go .judgment-label { color: var(--go); }
+.judgment-panel.cond .judgment-label { color: var(--conditional); }
+.judgment-panel.nogo .judgment-label { color: var(--nogo); }
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.03); }
+}
+.judgment-panel { animation: pulse 2s ease-in-out infinite; }
+
+.judgment-details {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 12px;
+  font-size: 12px;
+}
+.judgment-item {
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: rgba(255,255,255,0.7);
+}
+
+/* ============================================================
+   INPUT PANEL
+   ============================================================ */
+.input-section {
+  margin-bottom: 8px;
+}
+/* summary / section-body スタイルは下部CSS参照 */
+
+.input-row {
+  display: grid;
+  grid-template-columns: 180px 1fr 1fr 120px;
+  gap: 8px;
+  align-items: center;
+  padding: 4px 0;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 13px;
+}
+.input-row.sub-total {
+  background: var(--section-bg);
+  font-weight: 700;
+  padding: 6px 4px;
+  border-radius: 4px;
+}
+.input-row label { font-weight: 500; }
+.input-row .note { font-size: 11px; color: #888; }
+
+/* input[type="number"] と input[type="range"] は下部CSS参照 */
+.slider-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.computed-val {
+  text-align: right;
+  font-weight: 600;
+  padding: 4px 6px;
+}
+
+/* ============================================================
+   TABLES
+   ============================================================ */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  margin: 12px 0;
+  overflow-x: auto;
+  display: block;
+}
+.data-table thead th {
+  background: var(--heading);
+  color: #fff;
+  padding: 8px 6px;
+  text-align: center;
+  font-weight: 600;
+  white-space: nowrap;
+  position: sticky;
+  top: 0;
+}
+.data-table tbody td {
+  padding: 6px;
+  text-align: right;
+  border-bottom: 1px solid #eee;
+  white-space: nowrap;
+}
+.data-table tbody td:first-child { text-align: left; font-weight: 500; }
+.data-table tbody tr:hover { background: #f8f9ff; }
+.data-table tbody tr.total-row { background: var(--section-bg); font-weight: 700; }
+.data-table tbody tr.highlight-row { background: #fff3cd; }
+td.positive { color: var(--go); }
+td.negative { color: var(--nogo); }
+
+/* ============================================================
+   CHART CONTAINERS
+   ============================================================ */
+.chart-container {
+  width: 100%;
+  position: relative;
+  margin: 16px 0;
+}
+.chart-container canvas {
+  width: 100%;
+  height: 300px;
+  display: block;
+}
+.chart-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--heading);
+  margin-bottom: 8px;
+}
+.chart-tooltip {
+  position: absolute;
+  background: rgba(0,0,0,0.85);
+  color: #fff;
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  pointer-events: none;
+  display: none;
+  z-index: 100;
+  white-space: nowrap;
+}
+
+/* ============================================================
+   SCENARIO COMPARISON
+   ============================================================ */
+/* scenario-grid スタイルは下部CSS参照 */
+.scenario-card {
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+}
+.scenario-card.optimistic { border-color: var(--go); }
+.scenario-card.standard { border-color: var(--blue); }
+.scenario-card.pessimistic { border-color: var(--nogo); }
+.scenario-card h3 {
+  text-align: center;
+  font-size: 16px;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+.scenario-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 0;
+  font-size: 13px;
+  border-bottom: 1px solid #f0f0f0;
+}
+.scenario-item .val { font-weight: 700; }
+.diff-better { color: var(--go); }
+.diff-worse { color: var(--nogo); }
+
+/* ============================================================
+   SAVE/LOAD CONTROLS
+   ============================================================ */
+.save-controls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin: 12px 0;
+  padding: 12px;
+  background: var(--section-bg);
+  border-radius: 8px;
+}
+.save-controls input[type="text"] {
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 13px;
+  flex: 1;
+  min-width: 120px;
+}
+.save-controls select {
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 13px;
+  flex: 1;
+  min-width: 120px;
+}
+.btn {
+  padding: 6px 16px;
+  border: none;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.btn:hover { opacity: 0.85; }
+.btn-primary { background: var(--heading); color: #fff; }
+.btn-success { background: var(--go); color: #fff; }
+.btn-danger { background: var(--nogo); color: #fff; }
+.btn-outline {
+  background: #fff;
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+
+/* ============================================================
+   STRESS TEST
+   ============================================================ */
+.stress-scenario {
+  margin-bottom: 16px;
+}
+.stress-scenario h4 {
+  font-size: 14px;
+  color: var(--heading);
+  margin-bottom: 8px;
+  padding: 6px 10px;
+  background: var(--section-bg);
+  border-radius: 4px;
+}
+
+/* ============================================================
+   COMPETITOR ANALYSIS
+   ============================================================ */
+.competitor-cards {
+  margin: 16px 0;
+}
+.comp-card {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  background: var(--card-bg);
+}
+.comp-card.self-store {
+  background: #f0f4ff;
+}
+.comp-card h4 {
+  font-size: 13px;
+  color: var(--heading);
+  margin-bottom: 8px;
+}
+.comp-stat {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  padding: 2px 0;
+}
+
+/* ============================================================
+   PRESENT MODE
+   ============================================================ */
+body.present-mode .input-panel { display: none !important; }
+body.present-mode .kpi-card .kpi-value { font-size: 36px; }
+body.present-mode .chart-container canvas { height: 450px; }
+body.present-mode .tab-panel { padding: 24px; }
+body.present-mode .judgment-label { font-size: 56px; }
+body.present-mode .judgment-panel { padding: 32px; }
+/* present-mode 拡張は下部CSS参照 */
+
+/* ============================================================
+   FOOTER (overridden by new CSS below)
+   ============================================================ */
+
+/* ============================================================
+   PRINT
+   ============================================================ */
+@media print {
+  @page { size: A4 landscape; margin: 10mm; }
+  body { font-size: 10px; }
+  .header { padding: 8px; }
+  .tab-nav { display: none; }
+  .tab-panel { display: block !important; page-break-inside: avoid; }
+  .chart-container canvas { height: 200px; }
+  .mode-toggle { display: none; }
+  .save-controls { display: none; }
+  input[name="tab"] { display: none; }
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 768px) {
+  .header h1 { font-size: 15px; }
+  .kpi-card .kpi-value { font-size: 22px; }
+  .input-row {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+  .tab-nav label { padding: 8px 10px; font-size: 11px; }
+  .judgment-label { font-size: 32px; }
+  .data-table { font-size: 11px; }
+}
+@media (max-width: 480px) {
+  .kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+  .kpi-card { padding: 10px; }
+  .kpi-card .kpi-value { font-size: 20px; }
+  .header h1 { font-size: 13px; }
+}
+
+/* ============================================================
+   HEATMAP LEGEND
+   ============================================================ */
+.heatmap-legend {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0;
+  font-size: 11px;
+}
+.heatmap-legend .legend-bar {
+  width: 120px;
+  height: 14px;
+  border-radius: 3px;
+  background: linear-gradient(to right, #C00000, #fff, #00B050);
+}
+
+/* ============================================================
+   RISK TABLE
+   ============================================================ */
+.risk-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0;
+  font-size: 13px;
+}
+.risk-table th {
+  background: var(--section-bg);
+  padding: 8px;
+  text-align: left;
+  font-weight: 600;
+}
+.risk-table td {
+  padding: 8px;
+  border-bottom: 1px solid #eee;
+}
+.risk-high { color: var(--nogo); font-weight: 700; }
+.risk-mid { color: var(--conditional); font-weight: 700; }
+
+/* Section title */
+.section-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--heading);
+  margin: 16px 0 8px;
+  padding-bottom: 6px;
+  border-bottom: 2px solid var(--heading);
+}
+
+/* ============================================================
+   METRICS SPLIT: 返済テーブル + ドーナツ 2カラム
+   ============================================================ */
+.metrics-split {
+  display: grid;
+  grid-template-columns: 60fr 40fr;
+  gap: 24px;
+  align-items: start;
+  margin-top: 16px;
+}
+.metrics-split h3 {
+  margin-top: 0;
+  margin-bottom: 8px;
+  color: var(--heading);
+}
+@media (max-width: 768px) {
+  .metrics-split { grid-template-columns: 1fr; }
+}
+
+/* ============================================================
+   DATA TABLE 改善
+   ============================================================ */
+.data-table {
+  width: 100%;
+}
+.data-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  white-space: nowrap;
+}
+.data-table tbody td {
+  padding: 5px 8px;
+  white-space: nowrap;
+}
+.data-table tbody td.negative,
+.data-table td.negative {
+  color: #E74C3C;
+  font-weight: 600;
+}
+.data-table tr.highlight-row td { font-weight: 700; }
+.data-table tr.highlight-row td:not(:first-child) { font-weight: 600; }
+
+/* チャートコンテナ余白最適化 */
+.chart-container { margin: 10px 0; }
+.chart-container canvas { display: block; }
+
+/* ドーナツチャートコンテナをコンパクトに */
+.donut-wrap canvas { height: 260px !important; }
+
+/* ============================================================
+   ZEBRA STRIPE
+   ============================================================ */
+.data-table tbody tr:nth-child(even) { background: #f8f9fa; }
+.data-table tbody tr.total-row { background: var(--section-bg) !important; font-weight: 700; }
+.data-table tbody tr.highlight-row { background: #eef2f7 !important; font-weight: 700; }
+
+/* ============================================================
+   STRESS TEST 2カラム
+   ============================================================ */
+.stress-charts-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin: 0 0 8px;
+}
+@media (max-width: 768px) { .stress-charts-grid { grid-template-columns: 1fr; } }
+
+.stress-scenario { margin-bottom: 12px; }
+
+/* ============================================================
+   競合カード 4列グリッド
+   ============================================================ */
+.comp-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin: 16px 0;
+}
+@media (max-width: 1024px) { .comp-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 480px) { .comp-grid { grid-template-columns: 1fr; } }
+.comp-card.self-store {
+  border-left: 4px solid var(--heading) !important;
+}
+
+/* ============================================================
+   シナリオ比較 均等3分割
+   ============================================================ */
+.scenario-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin: 16px 0;
+}
+@media (max-width: 768px) { .scenario-grid { grid-template-columns: 1fr; } }
+
+/* ============================================================
+   KPIカード高さ統一
+   ============================================================ */
+.kpi-card {
+  min-height: 110px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* ============================================================
+   アコーディオン改善
+   ============================================================ */
+.input-section summary {
+  padding: 12px 16px;
+  background: #f0f4f8;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--heading);
+  cursor: pointer;
+  list-style: none;
+  transition: background 0.2s, color 0.2s;
+}
+.input-section summary::-webkit-details-marker { display: none; }
+.input-section summary::before {
+  content: '\25B6\00A0';
+  font-size: 0.75em;
+  display: inline-block;
+  transition: transform 0.2s;
+}
+.input-section[open] summary::before { transform: rotate(90deg); }
+.input-section[open] summary {
+  background: var(--heading);
+  color: #fff;
+  border-radius: 6px 6px 0 0;
+}
+.input-section .section-body {
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-top: none;
+  border-radius: 0 0 6px 6px;
+  background: #fff;
+}
+
+/* ============================================================
+   スライダーカスタム
+   ============================================================ */
+input[type=range] {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 6px;
+  background: #dde2ea;
+  border-radius: 3px;
+  outline: none;
+  cursor: pointer;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--heading);
+  cursor: pointer;
+  box-shadow: 0 1px 4px rgba(0,32,96,0.3);
+}
+input[type=range]::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--heading);
+  cursor: pointer;
+  border: none;
+}
+input[type=number] {
+  width: 110px;
+  padding: 5px 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 13px;
+  background: var(--input-bg);
+  text-align: right;
+  font-family: 'Courier New', monospace;
+}
+input[type=number]:focus {
+  outline: none;
+  border-color: var(--blue);
+  box-shadow: 0 0 0 2px rgba(68,114,196,0.2);
+}
+
+/* ============================================================
+   プレゼンモード拡張
+   ============================================================ */
+body.present-mode .kpi-card .kpi-value { font-size: 2.5rem; }
+body.present-mode .judgment-panel { font-size: 3.5rem; }
+
+/* ============================================================
+   フッター密着
+   ============================================================ */
+.footer {
+  padding: 10px 16px;
+  margin-top: 0;
+  font-size: 11px;
+  color: #999;
+  border-top: 1px solid var(--border);
+  text-align: center;
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <h1>D'station新栄店 M&A投資判断シミュレーター</h1>
+  <div class="mode-toggle">
+    <label onclick="toggleMode('input')"><input type="radio" name="mode" value="input" checked><span>入力モード</span></label>
+    <label onclick="toggleMode('present')"><input type="radio" name="mode" value="present"><span>プレゼンモード</span></label>
+  </div>
+</div>
+
+<!-- CSS-only tab radios -->
+<input type="radio" name="tab" id="tab1" checked>
+<input type="radio" name="tab" id="tab2">
+<input type="radio" name="tab" id="tab3">
+<input type="radio" name="tab" id="tab4">
+<input type="radio" name="tab" id="tab5">
+<input type="radio" name="tab" id="tab6">
+<input type="radio" name="tab" id="tab7">
+
+<nav class="tab-nav">
+  <label for="tab1">ダッシュボード</label>
+  <label for="tab2">入力パネル</label>
+  <label for="tab3">10年CF</label>
+  <label for="tab4">投資指標</label>
+  <label for="tab5">ストレステスト</label>
+  <label for="tab6">競合分析</label>
+  <label for="tab7">シナリオ比較</label>
+</nav>
+
+<div class="panels">
+
+<!-- ============================================================
+     TAB 1: DASHBOARD
+     ============================================================ -->
+<div class="tab-panel" id="panel1">
+  <div id="judgmentPanel" class="judgment-panel go">
+    <div class="judgment-label" id="judgmentLabel">GO</div>
+    <div class="judgment-sub" id="judgmentSub"></div>
+    <div class="judgment-details" id="judgmentDetails"></div>
+  </div>
+
+  <div class="kpi-grid" id="dashKPIs"></div>
+
+  <div class="chart-container">
+    <div class="chart-title">10年フリーCF推移 / 累積CF</div>
+    <canvas id="dashChart" style="width:100%;height:280px;display:block"></canvas>
+    <div class="chart-tooltip" id="dashTooltip"></div>
+  </div>
+</div>
+
+<!-- ============================================================
+     TAB 2: INPUT PANEL
+     ============================================================ -->
+<div class="tab-panel input-panel" id="panel2">
+  <h2 class="section-title">パラメータ入力</h2>
+  <p style="font-size:12px;color:#888;margin-bottom:12px;">スライダーまたは数値を変更すると即座に全タブが再計算されます。</p>
+
+  <!-- 店舗基本情報 -->
+  <details class="input-section" open>
+    <summary>店舗基本情報</summary>
+    <div class="section-body" id="secBasic"></div>
+  </details>
+
+  <!-- 台構成 -->
+  <details class="input-section">
+    <summary>台構成（貸玉単価別）</summary>
+    <div class="section-body" id="secMachines"></div>
+  </details>
+
+  <!-- 売上前提 -->
+  <details class="input-section">
+    <summary>売上前提（貸玉単価別・1日）</summary>
+    <div class="section-body" id="secSales"></div>
+  </details>
+
+  <!-- 経費 -->
+  <details class="input-section">
+    <summary>経費項目（月額）</summary>
+    <div class="section-body" id="secExpenses"></div>
+  </details>
+
+  <!-- 投資額 -->
+  <details class="input-section">
+    <summary>投資額</summary>
+    <div class="section-body" id="secInvestment"></div>
+  </details>
+
+  <!-- 資金調達+WACC -->
+  <details class="input-section">
+    <summary>資金調達 / WACC</summary>
+    <div class="section-body" id="secFinance"></div>
+  </details>
+
+  <!-- 年次変動 -->
+  <details class="input-section">
+    <summary>年次変動パラメータ</summary>
+    <div class="section-body" id="secYearly"></div>
+  </details>
+
+  <!-- ストレステスト設定 -->
+  <details class="input-section">
+    <summary>ストレステスト / Terminal Value 設定</summary>
+    <div class="section-body" id="secStress"></div>
+  </details>
+</div>
+
+<!-- ============================================================
+     TAB 3: 10-YEAR CF
+     ============================================================ -->
+<div class="tab-panel" id="panel3">
+  <h2 class="section-title">10年キャッシュフロー</h2>
+  <div class="chart-container">
+    <div class="chart-title">フリーCF (棒) + 累積CF (線)</div>
+    <canvas id="cfChart" style="width:100%;height:320px;display:block"></canvas>
+    <div class="chart-tooltip" id="cfTooltip"></div>
+  </div>
+  <div style="overflow-x:auto;">
+    <table class="data-table" id="cfTable"></table>
+  </div>
+</div>
+
+<!-- ============================================================
+     TAB 4: INVESTMENT METRICS
+     ============================================================ -->
+<div class="tab-panel" id="panel4">
+  <h2 class="section-title">投資指標</h2>
+  <div class="kpi-grid" id="metricsKPIs"></div>
+
+  <h3 style="margin-top:20px;color:var(--heading);">Terminal Value</h3>
+  <div id="tvSection"></div>
+
+  <div class="metrics-split">
+    <div>
+      <h3>返済スケジュール</h3>
+      <div style="overflow-x:auto;">
+        <table class="data-table" id="loanTable"></table>
+      </div>
+    </div>
+    <div class="donut-wrap">
+      <h3>資金調達構成</h3>
+      <canvas id="donutChart" style="width:100%;height:260px;display:block"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     TAB 5: STRESS TEST
+     ============================================================ -->
+<div class="tab-panel" id="panel5">
+  <h2 class="section-title">ストレステスト</h2>
+  <div id="stressResults"></div>
+
+  <div class="stress-charts-grid">
+    <div>
+      <h3 style="margin-top:0;margin-bottom:8px;color:var(--heading);">感度分析ヒートマップ（稼働率 x 粗利率 → 初年度営業利益）</h3>
+      <div class="chart-container" style="margin:0;">
+        <canvas id="heatmapChart" style="width:100%;height:300px;display:block"></canvas>
+        <div class="chart-tooltip" id="heatTooltip"></div>
+      </div>
+      <div class="heatmap-legend"><span>赤字</span><div class="legend-bar"></div><span>黒字</span></div>
+    </div>
+    <div>
+      <h3 style="margin-top:0;margin-bottom:8px;color:var(--heading);">トルネードチャート（NPVインパクト）</h3>
+      <div class="chart-container" style="margin:0;">
+        <canvas id="tornadoChart" style="width:100%;height:300px;display:block"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <h3 style="margin-top:16px;color:var(--heading);">モンテカルロ NPV分布（1,000回シミュレーション）</h3>
+  <div class="chart-container">
+    <canvas id="monteChart" style="width:100%;height:280px;display:block"></canvas>
+  </div>
+  <div id="monteStats" style="font-size:13px;margin-top:8px;"></div>
+</div>
+
+<!-- ============================================================
+     TAB 6: COMPETITOR ANALYSIS
+     ============================================================ -->
+<div class="tab-panel" id="panel6">
+  <h2 class="section-title">競合分析</h2>
+  <div class="competitor-cards comp-grid" id="compCards"></div>
+
+  <h3 style="margin-top:20px;color:var(--heading);">台構成一覧 / 占有率</h3>
+  <div style="overflow-x:auto;">
+    <table class="data-table" id="compTable"></table>
+  </div>
+
+  <h3 style="margin-top:20px;color:var(--heading);">占有率比較チャート</h3>
+  <div class="chart-container">
+    <canvas id="shareChart" style="width:100%;height:280px;display:block"></canvas>
+  </div>
+
+  <h3 style="margin-top:20px;color:var(--heading);">競合リスク一覧</h3>
+  <table class="risk-table">
+    <thead><tr><th>リスク要因</th><th>内容</th><th>影響度</th></tr></thead>
+    <tbody>
+      <tr><td>マルハン増床・新規出店</td><td>鹿児島新港1,228台の拡大戦略</td><td class="risk-high">高</td></tr>
+      <tr><td>低貸玉競争激化</td><td>マルハン低貸拡大との正面衝突</td><td class="risk-mid">中</td></tr>
+      <tr><td>D'stationブランド認知</td><td>鹿児島に既存店なし</td><td class="risk-high">高</td></tr>
+      <tr><td>商圏人口動態</td><td>遊技参加人口減少率</td><td class="risk-mid">中</td></tr>
+      <tr><td>スマスロ/スマパチ移行</td><td>前倒し入替コスト</td><td class="risk-mid">中</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ============================================================
+     TAB 7: SCENARIO COMPARISON
+     ============================================================ -->
+<div class="tab-panel" id="panel7">
+  <h2 class="section-title">シナリオ比較</h2>
+
+  <div class="save-controls">
+    <input type="text" id="scenarioName" placeholder="シナリオ名">
+    <button class="btn btn-primary" onclick="saveScenario()">保存</button>
+    <select id="scenarioList"></select>
+    <button class="btn btn-outline" onclick="loadScenarioUI()">読込</button>
+    <button class="btn btn-danger" onclick="deleteScenario()">削除</button>
+  </div>
+
+  <div class="scenario-grid" id="scenarioGrid"></div>
+
+  <div class="chart-container">
+    <div class="chart-title">3シナリオ主要指標比較</div>
+    <canvas id="scenarioChart" style="width:100%;height:300px;display:block"></canvas>
+  </div>
+</div>
+
+</div><!-- /panels -->
+
+<!-- FOOTER -->
+<div class="footer">
+  D'station新栄店 M&A投資判断シミュレーター v3.0 | 免責事項: 本シミュレーターの結果は参考値であり、投資判断は自己責任で行ってください。
+</div>
+
+<script>
+/* ============================================================
+   STORAGE HELPERS
+   ============================================================ */
+function safeGetStorage(key, fallback='{}') {
+  try { return localStorage.getItem(key) || fallback; } catch(e) { return fallback; }
+}
+function safeSetStorage(key, val) {
+  try { localStorage.setItem(key, val); return true; } catch(e) { return false; }
+}
+
+/* ============================================================
+   GLOBAL STATE
+   ============================================================ */
+const P = {
+  daysPerMonth: 30,
+  machines: {
+    p4: [462,462], p1: [418,250], p02: [0,0],
+    s20: [454,514], s10: [0,0], s5: [0,108], s2: [0,0]
+  },
+  sales: {
+    p4:  {out:[30000,35000], tp:[1.50,1.50], tg:[0.117,0.125]},
+    p1:  {out:[25000,30000], tp:[0.25,0.25], tg:[0.030,0.032]},
+    p02: {out:[0,0], tp:[0,0], tg:[0,0]},
+    s20: {out:[8000,10000],  tp:[6.875,6.667], tg:[0.500,0.550]},
+    s10: {out:[0,0], tp:[0,0], tg:[0,0]},
+    s5:  {out:[0,8000],      tp:[0,1.714],    tg:[0,0.200]},
+    s2:  {out:[0,0], tp:[0,0], tg:[0,0]}
+  },
+  expenses: {
+    hr: {
+      salary:[10574700,11103435], bonus:[1600000,1680000],
+      recruit:[200000,800000], legal:[800000,840000],
+      welfare:[200000,210000], retire:[50000,52500]
+    },
+    mgmt: {
+      ad:[3000000,2400000], promo:[3000000,3000000],
+      machineBuy:[27710000,36258000], maint:[2500000,2250000],
+      supply:[1000000,850000], hygiene:[2500000,2500000],
+      utility:[4000000,3600000], telecom:[100000,100000],
+      office:[100000,100000], freight:[1000000,1000000],
+      dues:[500000,500000], travel:[500000,500000]
+    },
+    fixed: {
+      lease:[120000,120000], depreciation:[3000000,null],
+      rent:[13000000,13000000], fee:[2500000,2250000],
+      taxMisc:[450000,450000], outsource:[200000,200000],
+      insurance:[70000,70000], misc:[100000,100000]
+    }
+  },
+  investment: {
+    acquisition: {
+      transfer:1200000000, machine:250000000, interior:0,
+      compensation:0, deposit:0, gift:0, association:0, parking:0
+    },
+    renovation: {
+      pIsland:117480000, sIsland:0, hc:0, sand:0,
+      pCall:0, sCall:0, chair:0, sign:13200000,
+      partition:0, exterior:450000000
+    },
+    pmi: {
+      system:30000000, training:15000000,
+      uniform:5000000, grandOpen:20000000
+    }
+  },
+  depYears: {
+    transfer:5, machine:5, interior:5,
+    pIsland:8, sIsland:8, hc:6,
+    sand:5, pCall:5, sCall:5, chair:5,
+    sign:5, partition:18, exterior:10,
+    system:5
+  },
+  finance: {
+    equity:650000000, loan1:1050000000, loan2:450000000, loan3:0,
+    interest:0.018, loanYears:12, gracePeriod:12
+  },
+  wacc: { re:0.10, taxRate:0.3358 },
+  goodwill: { netAssets:500000000, amortYears:5 },
+  capex: { pRate:0, sRate:0, pCost:360000, sCost:400000 },
+  yearlyGrowth: { occupancy:-0.015, hr:0.02, utility:0.025, rent:0.0, machine:0.02 },
+  yearlyOverride: {
+    occupancy:[-0.12,-0.06,-0.02,0,-0.01,null,null,null,null,null],
+    hr:[0.04,0.02,null,null,null,null,null,null,null,null],
+    utility:[null,null,null,null,null,null,null,null,null,null],
+    rent:[0,0,0,0,0,0,0,0,0,0],
+    machine:[0,0,0.03,0.03,null,null,null,null,null,null]
+  },
+  stress: {
+    occupancy:[-0.10,-0.20,-0.30],
+    regulation:[-0.01,-0.02,-0.03],
+    interest:[0.005,0.01,0.02],
+    transferAmounts:[1000000000,1200000000,1500000000]
+  },
+  tv: { method:'ebitda', growthRate:-0.015, multiple:3.5 }
+};
+
+const competitors = [
+  {name:'T-MAX新栄店 → D\'station',self:true,p4:462,p1:250,p02:0,s20:514,s10:0,s5:108,s2:0,parking:1200},
+  {name:'ユーコーラッキー新栄店',self:false,p4:230,p1:138,p02:0,s20:132,s10:0,s5:44,s2:0,parking:376},
+  {name:'ワンダーランド1188',self:false,p4:528,p1:88,p02:0,s20:393,s10:0,s5:0,s2:0,parking:720},
+  {name:'ナンニチ新栄店',self:false,p4:111,p1:149,p02:0,s20:209,s10:0,s5:15,s2:0,parking:350},
+  {name:'宇宿大栄グラハン',self:false,p4:187,p1:171,p02:0,s20:120,s10:0,s5:0,s2:0,parking:400},
+  {name:'宇宿大栄グラハンII',self:false,p4:224,p1:64,p02:0,s20:160,s10:0,s5:0,s2:0,parking:400},
+  {name:'テンガイ与次郎店',self:false,p4:440,p1:120,p02:0,s20:482,s10:0,s5:0,s2:0,parking:648},
+  {name:'マルハン鹿児島新港',self:false,p4:480,p1:240,p02:0,s20:428,s10:0,s5:80,s2:0,parking:960}
+];
+
+/* ============================================================
+   CALCULATION ENGINE
+   ============================================================ */
+function getYearlyRate(type, yr) {
+  const idx = yr - 1;
+  const ov = P.yearlyOverride[type][idx];
+  if (ov !== null && ov !== undefined && ov !== '') return ov;
+  return P.yearlyGrowth[type];
+}
+
+function calcDailySales(plan) {
+  const units = ['p4','p1','p02','s20','s10','s5','s2'];
+  let ts = 0, tg = 0;
+  for (const u of units) {
+    const mc = P.machines[u][plan];
+    const out = P.sales[u].out[plan];
+    ts += mc * out * P.sales[u].tp[plan];
+    tg += mc * out * P.sales[u].tg[plan];
+  }
+  return {sales:ts, gross:tg};
+}
+
+function calcMonthlySales(plan) {
+  const d = calcDailySales(plan);
+  return {sales:d.sales*P.daysPerMonth, gross:d.gross*P.daysPerMonth};
+}
+
+function calcAnnualSales(plan) {
+  const m = calcMonthlySales(plan);
+  return {sales:m.sales*12, gross:m.gross*12};
+}
+
+function calcMonthlyDepreciation() {
+  const items = [
+    [P.investment.acquisition.transfer,5],[P.investment.acquisition.machine,5],
+    [P.investment.acquisition.interior,5],
+    [P.investment.renovation.pIsland,8],[P.investment.renovation.sIsland,8],
+    [P.investment.renovation.hc,6],[P.investment.renovation.sand,5],
+    [P.investment.renovation.pCall,5],[P.investment.renovation.sCall,5],
+    [P.investment.renovation.chair,5],[P.investment.renovation.sign,5],
+    [P.investment.renovation.partition,18],[P.investment.renovation.exterior,10],
+    [P.investment.pmi.system,5]
+  ];
+  return items.reduce((s,[a,y]) => a===0?s:s+a/y/12, 0);
+}
+
+function calcAnnualDepreciation(yr) {
+  const items = [
+    [P.investment.acquisition.transfer,5],[P.investment.acquisition.machine,5],
+    [P.investment.acquisition.interior,5],
+    [P.investment.renovation.pIsland,8],[P.investment.renovation.sIsland,8],
+    [P.investment.renovation.hc,6],[P.investment.renovation.sand,5],
+    [P.investment.renovation.pCall,5],[P.investment.renovation.sCall,5],
+    [P.investment.renovation.chair,5],[P.investment.renovation.sign,5],
+    [P.investment.renovation.partition,18],[P.investment.renovation.exterior,10],
+    [P.investment.pmi.system,5]
+  ];
+  return items.reduce((s,[a,y]) => (a===0||yr>y)?s:s+a/y, 0);
+}
+
+function calcMonthlyExpenses(plan) {
+  const hr = Object.values(P.expenses.hr).reduce((s,v) => s+v[plan], 0);
+  const mgmt = Object.values(P.expenses.mgmt).reduce((s,v) => s+v[plan], 0);
+  let depr = plan===0 ? P.expenses.fixed.depreciation[0] : calcMonthlyDepreciation();
+  const fixedItems = Object.entries(P.expenses.fixed)
+    .filter(([k]) => k!=='depreciation')
+    .reduce((s,[,v]) => s+v[plan], 0);
+  const fixed = fixedItems + depr;
+  return {hr, mgmt, fixed, depreciation:depr, total:hr+mgmt+fixed};
+}
+
+function calcGoodwill() {
+  const amt = P.investment.acquisition.transfer - P.goodwill.netAssets;
+  const mo = amt / P.goodwill.amortYears / 12;
+  return {amount:amt, monthly:mo, annual:mo*12};
+}
+
+function calcAnnualGoodwillAmort(yr) {
+  if (yr > P.goodwill.amortYears) return 0;
+  return calcGoodwill().annual;
+}
+
+function calcWACC() {
+  const E = P.finance.equity;
+  const D = P.finance.loan1 + P.finance.loan2 + P.finance.loan3;
+  const V = E + D;
+  if (V===0) return P.wacc.re;
+  return (E/V*P.wacc.re) + (D/V*P.finance.interest*(1-P.wacc.taxRate));
+}
+
+function calcLoanSchedule() {
+  const Pr = P.finance.loan1 + P.finance.loan2 + P.finance.loan3;
+  const r = P.finance.interest / 12;
+  const n = P.finance.loanYears * 12;
+  if (Pr===0 || r===0) return {schedule:[], mp:0};
+  const mp = Pr * (r * Math.pow(1+r,n)) / (Math.pow(1+r,n) - 1);
+  const sched = [];
+  let bal = Pr;
+  for (let yr=1; yr<=Math.max(10,P.finance.loanYears); yr++) {
+    if (yr > P.finance.loanYears) {
+      sched.push({year:yr, startBal:0, principal:0, interest:0, total:0, endBal:0});
+      continue;
+    }
+    let yp=0, yi=0;
+    const sb = bal;
+    for (let m=1; m<=12; m++) {
+      const mi = bal*r;
+      const mpr = mp - mi;
+      yp += mpr; yi += mi;
+      bal -= mpr;
+    }
+    bal = Math.max(0, bal);
+    sched.push({year:yr, startBal:sb, principal:yp, interest:yi, total:yp+yi, endBal:bal});
+  }
+  return {schedule:sched, mp};
+}
+
+function calcTotalInvestment() {
+  const a = Object.values(P.investment.acquisition).reduce((s,v)=>s+v,0);
+  const r = Object.values(P.investment.renovation).reduce((s,v)=>s+v,0);
+  const p = Object.values(P.investment.pmi).reduce((s,v)=>s+v,0);
+  return a+r+p;
+}
+
+function calcAnnualCapex(yr) {
+  const pT = P.machines.p4[1]+P.machines.p1[1]+P.machines.p02[1];
+  const sT = P.machines.s20[1]+P.machines.s10[1]+P.machines.s5[1]+P.machines.s2[1];
+  const mR = getYearlyRate('machine',yr);
+  const cum = Math.pow(1+mR, yr-1);
+  return (pT*P.capex.pRate*P.capex.pCost + sT*P.capex.sRate*P.capex.sCost)*cum;
+}
+
+function calcCashFlow() {
+  const plan = 1;
+  const base = calcAnnualSales(plan);
+  const baseExp = calcMonthlyExpenses(plan);
+  const gmr = base.gross / base.sales;
+  const totalInv = calcTotalInvestment();
+  const loanTotal = P.finance.loan1+P.finance.loan2+P.finance.loan3;
+  const ls = calcLoanSchedule();
+
+  const cf = [];
+  cf.push({
+    year:0, sales:0, cogs:0, gross:0,
+    hr:0, mgmt:0, fixedExDepr:0, depr:0, norenAmort:0,
+    opProfit:0, interest:0, tax:0, afterTax:0,
+    addDepr:0, addNoren:0, opCF:0,
+    capex:0, repay:0, lease:0,
+    fcf:-totalInv, cumCF:-totalInv, loanBal:loanTotal,
+    grossMargin:0, opMargin:0
+  });
+
+  let prevSales = base.sales;
+  let prevHR = baseExp.hr * 12;
+  let cumCF = -totalInv;
+
+  for (let yr=1; yr<=10; yr++) {
+    const occR = getYearlyRate('occupancy',yr);
+    const sales = prevSales * (1+occR);
+    prevSales = sales;
+    const cogs = sales * (1-gmr);
+    const gross = sales - cogs;
+
+    const hrR = getYearlyRate('hr',yr);
+    const hr = yr===1 ? baseExp.hr*12*(1+hrR) : prevHR*(1+hrR);
+    prevHR = hr;
+
+    const machR = getYearlyRate('machine',yr);
+    const machBuyBase = P.expenses.mgmt.machineBuy[plan]*12;
+    const mgmtFixed = (baseExp.mgmt - P.expenses.mgmt.machineBuy[plan])*12;
+    const mgmt = mgmtFixed + machBuyBase*Math.pow(1+machR,yr);
+
+    const fixedExDepr = (baseExp.fixed - baseExp.depreciation)*12;
+    const depr = calcAnnualDepreciation(yr);
+    const norenAmort = calcAnnualGoodwillAmort(yr);
+    const opProfit = gross - hr - mgmt - fixedExDepr - depr - norenAmort;
+
+    const interest = (ls.schedule[yr-1]) ? ls.schedule[yr-1].interest : 0;
+    const taxable = opProfit - interest;
+    const tax = Math.max(0, taxable * P.wacc.taxRate);
+    const afterTax = opProfit - tax;
+    const opCF = afterTax + depr + norenAmort;
+    const capex = calcAnnualCapex(yr);
+    const repay = (ls.schedule[yr-1]) ? ls.schedule[yr-1].principal : 0;
+    const lease = P.expenses.fixed.lease[plan]*12;
+    const fcf = opCF - capex - repay - lease;
+    cumCF += fcf;
+    const loanBal = yr===1 ? loanTotal-repay : Math.max(0, cf[yr-1].loanBal-repay);
+
+    cf.push({
+      year:yr, sales, cogs, gross,
+      hr, mgmt, fixedExDepr, depr, norenAmort,
+      opProfit, interest, tax, afterTax,
+      addDepr:depr, addNoren:norenAmort, opCF,
+      capex, repay, lease,
+      fcf, cumCF, loanBal,
+      grossMargin: sales>0?gross/sales:0,
+      opMargin: sales>0?opProfit/sales:0
+    });
+  }
+  return cf;
+}
+
+function calcIRR(cfs, guess=0.1) {
+  let rate = guess;
+  for (let i=0;i<200;i++) {
+    let npv=0, dnpv=0;
+    for (let t=0;t<cfs.length;t++) {
+      const df = Math.pow(1+rate,t);
+      npv += cfs[t]/df;
+      if (t>0) dnpv -= t*cfs[t]/Math.pow(1+rate,t+1);
+    }
+    if (Math.abs(npv)<1e-7) return rate;
+    if (Math.abs(dnpv)<1e-10) return null;
+    let nr = rate - npv/dnpv;
+    if (nr<-0.99) nr=-0.99;
+    else if (nr>10) nr=10;
+    if (Math.abs(nr-rate)<1e-9) return rate; // 変化なし＝収束
+    rate = nr;
+  }
+  return null; // 収束せず
+}
+
+function calcNPV(wacc, cfs) {
+  let npv = cfs[0];
+  for (let t=1;t<cfs.length;t++) npv += cfs[t]/Math.pow(1+wacc,t);
+  return npv;
+}
+
+function calcMIRR(cfs, finRate, reinRate) {
+  const n = cfs.length-1;
+  let fvP=0, pvN=0;
+  for (let t=0;t<=n;t++) {
+    if (cfs[t]>=0) fvP += cfs[t]*Math.pow(1+reinRate,n-t);
+    else pvN += cfs[t]/Math.pow(1+finRate,t);
+  }
+  if (pvN===0) return null;
+  return Math.pow(-fvP/pvN, 1/n)-1;
+}
+
+function calcROI(cf) {
+  return cf[10].cumCF / calcTotalInvestment();
+}
+
+function calcPaybackPeriod(cf) {
+  for (let yr=1;yr<=10;yr++) {
+    if (cf[yr].cumCF>=0) {
+      const prev = Math.abs(cf[yr-1].cumCF);
+      const mo = prev/cf[yr].fcf*12;
+      return {years:yr-1, months:Math.ceil(mo), total:(yr-1)+mo/12};
+    }
+  }
+  return {years:10, months:0, total:Infinity};
+}
+
+function calcTerminalValue(cf) {
+  const wacc = calcWACC();
+  const fcf10 = cf[10].fcf;
+  const ebitda10 = cf[10].opProfit + cf[10].depr + cf[10].norenAmort;
+  const g = P.tv.growthRate;
+  const tvDCG = (wacc - g > 0.001) ? fcf10*(1+g)/(wacc-g) : 0;
+  const tvEBITDA = ebitda10 * P.tv.multiple;
+  const tv = P.tv.method==='dcg'?tvDCG:tvEBITDA;
+  const pvTV = tv/Math.pow(1+wacc,10);
+  return {tvDCG, tvEBITDA, tv, pvTV};
+}
+
+function calcBEP() {
+  const plan=1;
+  const exp = calcMonthlyExpenses(plan);
+  const base = calcAnnualSales(plan);
+  const machBuy = P.expenses.mgmt.machineBuy[plan];
+  const fixed = (exp.hr + (exp.mgmt-machBuy) + exp.fixed + calcGoodwill().monthly)*12;
+  return fixed / base.gross;
+}
+
+function calcJudgment(cf) {
+  const wacc = calcWACC();
+  const fcfs = cf.map(c=>c.fcf);
+  const irr = calcIRR(fcfs);
+  const npv = calcNPV(wacc, fcfs);
+  const pp = calcPaybackPeriod(cf);
+  const bep = calcBEP();
+
+  // Stress resilience
+  const st = calcStressTest(cf);
+  let redCount = 0;
+  // Check if worst-case scenario has negative yr1 opProfit (operating loss)
+  if (st.occupancy && st.occupancy.length>0) {
+    const worst = st.occupancy.reduce((a,b)=>(a.opProfit<b.opProfit?a:b));
+    if (worst.opProfit < 0) redCount++;
+  }
+  if (st.regulation && st.regulation.length>0) {
+    const worstFCF = st.regulation.reduce((a,b)=>(a.fcf[1]<b.fcf[1]?a:b));
+    if (worstFCF.fcf[1] < 0) redCount++;
+  }
+  if (st.interest && st.interest.length>0) {
+    const worstFCF = st.interest.reduce((a,b)=>(a.fcf[1]<b.fcf[1]?a:b));
+    if (worstFCF.fcf[1] < 0) redCount++;
+  }
+  if (st.complex && st.complex.fcf[1] < 0) redCount++;
+
+  const j = {};
+  // IRR
+  j.irr = irr!==null && irr > wacc+0.05 ? 'GO' : (irr!==null && irr > wacc ? 'COND' : 'NOGO');
+  // NPV
+  j.npv = npv > 0 ? 'GO' : (npv >= -50000000 ? 'COND' : 'NOGO');
+  // Payback
+  j.payback = pp.total <= 7 ? 'GO' : (pp.total <= 10 ? 'COND' : 'NOGO');
+  // Stress
+  j.stress = redCount === 0 ? 'GO' : (redCount <= 1 ? 'COND' : 'NOGO');
+  // BEP
+  j.bep = bep < 0.70 ? 'GO' : (bep <= 0.85 ? 'COND' : 'NOGO');
+
+  // Overall
+  const vals = Object.values(j);
+  if (vals.includes('NOGO')) j.overall = 'NOGO';
+  else if (vals.every(v=>v==='GO')) j.overall = 'GO';
+  else j.overall = 'COND';
+
+  return j;
+}
+
+function calcStressTest(cf) {
+  const wacc = calcWACC();
+  const tax = P.wacc.taxRate;
+  const baseFCF = cf.map(c=>c.fcf);
+  const baseGross = cf.map(c=>c.gross);
+  const baseSales = cf.map(c=>c.sales);
+  const loanTotal = P.finance.loan1+P.finance.loan2+P.finance.loan3;
+
+  const results = {};
+
+  results.occupancy = P.stress.occupancy.map(delta => {
+    const adj = baseFCF.map((f,yr)=>yr===0?f:f+baseGross[yr]*delta*(1-tax));
+    const yr1op = cf[1] ? cf[1].opProfit+baseGross[1]*delta : 0;
+    return {fcf:adj, irr:calcIRR(adj), npv:calcNPV(wacc,adj), cumCF:adj.reduce((s,v)=>s+v,0), opProfit:yr1op};
+  });
+
+  results.regulation = P.stress.regulation.map(delta => {
+    const adj = baseFCF.map((f,yr)=>yr===0?f:f+baseSales[yr]*delta*(1-tax));
+    return {fcf:adj, irr:calcIRR(adj), npv:calcNPV(wacc,adj), cumCF:adj.reduce((s,v)=>s+v,0)};
+  });
+
+  results.interest = P.stress.interest.map(delta => {
+    const adj = baseFCF.map((f,yr)=>yr===0?f:f-loanTotal*delta*(1-tax)*(yr<=P.finance.loanYears?1:0));
+    return {fcf:adj, irr:calcIRR(adj), npv:calcNPV(wacc,adj), cumCF:adj.reduce((s,v)=>s+v,0)};
+  });
+
+  const hrBase = Object.values(P.expenses.hr).reduce((s,v)=>s+v[1],0)*12;
+  const utilBase = P.expenses.mgmt.utility[1]*12;
+  results.complex = (()=>{
+    const adj = baseFCF.map((f,yr)=>{
+      if (yr===0) return f;
+      const oI = baseGross[yr]*(-0.20)*(1-tax);
+      const rI = baseSales[yr]*(-0.02)*(1-tax);
+      const iI = loanTotal*0.01*(1-tax)*(yr<=P.finance.loanYears?1:0);
+      const hI = hrBase*(Math.pow(1.03,yr)-Math.pow(1+P.yearlyGrowth.hr,yr))*(1-tax);
+      const uI = utilBase*(Math.pow(1.05,yr)-Math.pow(1+P.yearlyGrowth.utility,yr))*(1-tax);
+      return f+oI+rI-iI-hI-uI;
+    });
+    return {fcf:adj, irr:calcIRR(adj), npv:calcNPV(wacc,adj), cumCF:adj.reduce((s,v)=>s+v,0)};
+  })();
+
+  results.transfer = P.stress.transferAmounts.map(amount => {
+    const diff = P.investment.acquisition.transfer - amount;
+    const adj = baseFCF.map((f,yr)=>{
+      if (yr===0) return f+diff;
+      if (yr<=5) return f-(diff/5*tax);
+      return f;
+    });
+    return {fcf:adj, irr:calcIRR(adj), npv:calcNPV(wacc,adj), cumCF:adj.reduce((s,v)=>s+v,0)};
+  });
+
+  return results;
+}
+
+function calcSensitivityMatrix(cf) {
+  const occRates = [-0.30,-0.20,-0.10,0,0.10];
+  const profitDeltas = [-0.03,-0.02,-0.01,0,0.01];
+  const baseGross = cf[1].gross;
+  const baseSales = cf[1].sales;
+  const fixedCost = baseGross - cf[1].opProfit;
+  const matrix = [];
+  for (const occ of occRates) {
+    const row = [];
+    for (const pd of profitDeltas) {
+      const adjGross = baseGross*(1+occ) + baseSales*pd;
+      const adjOP = adjGross - fixedCost;
+      row.push(adjOP);
+    }
+    matrix.push(row);
+  }
+  return {matrix, occRates, profitDeltas};
+}
+
+function normalRandom(m=0,s=1) {
+  const u1=Math.random(), u2=Math.random();
+  return m+s*Math.sqrt(-2*Math.log(u1))*Math.cos(2*Math.PI*u2);
+}
+
+function runMonteCarlo(cf, iterations=1000) {
+  const wacc=calcWACC();
+  const baseFCF=cf.map(c=>c.fcf);
+  const baseGross=cf.map(c=>c.gross);
+  const baseSales=cf.map(c=>c.sales);
+  const tax=P.wacc.taxRate;
+  const loanT=P.finance.loan1+P.finance.loan2+P.finance.loan3;
+  const results=[];
+  for (let i=0;i<iterations;i++) {
+    const oD=normalRandom(0,0.10);
+    const pD=normalRandom(0,0.015);
+    const rD=normalRandom(0,0.005);
+    const adj=baseFCF.map((f,yr)=>{
+      if (yr===0) return f;
+      return f + baseGross[yr]*oD*(1-tax) + baseSales[yr]*pD*(1-tax) - loanT*Math.max(0,rD)*(1-tax)*(yr<=P.finance.loanYears?1:0);
+    });
+    results.push(calcNPV(wacc,adj));
+  }
+  results.sort((a,b)=>a-b);
+  const mean=results.reduce((s,v)=>s+v,0)/results.length;
+  return {
+    results, mean,
+    median:results[Math.floor(results.length/2)],
+    p5:results[Math.floor(results.length*0.05)],
+    p95:results[Math.floor(results.length*0.95)],
+    min:results[0], max:results[results.length-1]
+  };
+}
+
+/* ============================================================
+   FORMAT HELPERS
+   ============================================================ */
+function fmtOku(v) {
+  if (v==null||!isFinite(v)) return '-';
+  return (v/100000000).toFixed(1)+'億円';
+}
+function fmtHyakuMan(v) {
+  if (v==null||!isFinite(v)) return '-';
+  return (v/1000000).toFixed(0)+'百万円';
+}
+// テーブル用: 数値のみ（単位はヘッダーに記載）
+function fmtHM(v) {
+  if (v==null||!isFinite(v)) return '-';
+  return Math.round(v/1000000).toLocaleString();
+}
+function fmtPct(v) {
+  if (v==null||!isFinite(v)) return '-';
+  return (v*100).toFixed(2)+'%';
+}
+function fmtPct1(v) {
+  if (v==null||!isFinite(v)) return '-';
+  return (v*100).toFixed(1)+'%';
+}
+function fmtNum(v) {
+  if (v==null||!isFinite(v)) return '-';
+  if (Math.abs(v)>=100000000) return fmtOku(v);
+  if (Math.abs(v)>=1000000) return fmtHyakuMan(v);
+  return Math.round(v).toLocaleString();
+}
+function fmtMan(v) {
+  if (v==null||!isFinite(v)) return '-';
+  return (v/10000).toFixed(0)+'万円';
+}
+
+/* ============================================================
+   CANVAS CHART ENGINE
+   ============================================================ */
+function setupCanvas(canvas) {
+  const dpr = window.devicePixelRatio||1;
+  let rect = canvas.getBoundingClientRect();
+  // hidden tab対策: 0x0の場合、親の幅とstyleの高さを使用
+  if (rect.width === 0) {
+    const parent = canvas.parentElement;
+    if (parent) {
+      const pw = parent.offsetWidth || parent.clientWidth || 800;
+      rect = {width: pw, height: parseInt(canvas.style.height)||280};
+    }
+  }
+  if (rect.width === 0 || rect.height === 0) return null;
+  canvas.width = rect.width*dpr;
+  canvas.height = rect.height*dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr,dpr);
+  return {ctx, w:rect.width, h:rect.height};
+}
+
+function drawComboChart(canvasId, labels, barData, lineData, tooltipId) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const setup = setupCanvas(canvas); if(!setup) return; const {ctx,w,h} = setup;
+  const pad = {t:30, r:70, b:50, l:80};
+  const cw = w-pad.l-pad.r;
+  const ch = h-pad.t-pad.b;
+
+  ctx.clearRect(0,0,w,h);
+
+  // Calc ranges
+  const allBar = barData.filter(v=>v!=null);
+  const allLine = lineData.filter(v=>v!=null);
+  const allVals = [...allBar, ...allLine];
+  let minV = Math.min(0,...allVals);
+  let maxV = Math.max(0,...allVals);
+  const range = maxV-minV||1;
+  minV -= range*0.1;
+  maxV += range*0.1;
+
+  function yPos(v) { return pad.t + ch*(1-(v-minV)/(maxV-minV)); }
+
+  // Grid
+  ctx.strokeStyle = '#e0e0e0';
+  ctx.lineWidth = 0.5;
+  const steps = 5;
+  for (let i=0;i<=steps;i++) {
+    const v = minV+(maxV-minV)*i/steps;
+    const y = yPos(v);
+    ctx.beginPath(); ctx.moveTo(pad.l,y); ctx.lineTo(w-pad.r,y); ctx.stroke();
+    ctx.fillStyle='#888'; ctx.font='11px sans-serif'; ctx.textAlign='right';
+    ctx.fillText(fmtOku(v), pad.l-6, y+4);
+  }
+
+  // Zero line
+  if (minV<0 && maxV>0) {
+    const zy = yPos(0);
+    ctx.strokeStyle='#999'; ctx.lineWidth=1; ctx.setLineDash([4,4]);
+    ctx.beginPath(); ctx.moveTo(pad.l,zy); ctx.lineTo(w-pad.r,zy); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // Bars
+  const bw = cw/labels.length*0.6;
+  const barRects = [];
+  for (let i=0;i<barData.length;i++) {
+    if (barData[i] == null) continue;
+    const x = pad.l + cw/labels.length*(i+0.5) - bw/2;
+    const zy = yPos(0);
+    const vy = yPos(barData[i]);
+    const by = Math.min(zy,vy);
+    const bh = Math.abs(zy-vy);
+    ctx.fillStyle = barData[i]>=0 ? '#4472C4' : '#C00000';
+    ctx.fillRect(x,by,bw,bh);
+    barRects.push({x,y:by,w:bw,h:bh,val:barData[i],label:labels[i]});
+
+    // Label
+    ctx.fillStyle='#555'; ctx.font='11px sans-serif'; ctx.textAlign='center';
+    ctx.fillText(labels[i], pad.l+cw/labels.length*(i+0.5), h-pad.b+16);
+  }
+
+  // Line
+  ctx.strokeStyle='#C00000'; ctx.lineWidth=2;
+  ctx.beginPath();
+  let lineStarted = false;
+  for (let i=0;i<lineData.length;i++) {
+    if (lineData[i] == null) continue;
+    const x = pad.l+cw/labels.length*(i+0.5);
+    const y = yPos(lineData[i]);
+    if (!lineStarted) { ctx.moveTo(x,y); lineStarted=true; } else ctx.lineTo(x,y);
+  }
+  ctx.stroke();
+  // Dots
+  for (let i=0;i<lineData.length;i++) {
+    if (lineData[i] == null) continue;
+    const x = pad.l+cw/labels.length*(i+0.5);
+    const y = yPos(lineData[i]);
+    ctx.beginPath(); ctx.arc(x,y,4,0,Math.PI*2);
+    ctx.fillStyle='#C00000'; ctx.fill();
+    ctx.strokeStyle='#fff'; ctx.lineWidth=1; ctx.stroke();
+  }
+
+  // Legend
+  ctx.fillStyle='#4472C4'; ctx.fillRect(pad.l,6,12,12);
+  ctx.fillStyle='#333'; ctx.font='11px sans-serif'; ctx.textAlign='left';
+  ctx.fillText('フリーCF',pad.l+16,16);
+  ctx.fillStyle='#C00000'; ctx.fillRect(pad.l+90,6,12,12);
+  ctx.fillStyle='#333'; ctx.fillText('累積CF',pad.l+106,16);
+
+  // Right axis label
+  ctx.save();
+  ctx.fillStyle='#C00000'; ctx.font='11px sans-serif'; ctx.textAlign='center';
+  ctx.translate(w-10,h/2); ctx.rotate(-Math.PI/2);
+  ctx.fillText('累積CF',0,0);
+  ctx.restore();
+
+  // Tooltip
+  if (tooltipId) {
+    const tip = document.getElementById(tooltipId);
+    canvas.onmousemove = canvas.ontouchmove = function(e) {
+      const rect = canvas.getBoundingClientRect();
+      const mx = (e.touches?e.touches[0].clientX:e.clientX) - rect.left;
+      const my = (e.touches?e.touches[0].clientY:e.clientY) - rect.top;
+      let found = false;
+      for (const br of barRects) {
+        if (mx>=br.x && mx<=br.x+br.w && my>=br.y && my<=br.y+br.h) {
+          const idx = barRects.indexOf(br);
+          tip.style.display='block';
+          tip.style.left=(mx+10)+'px';
+          tip.style.top=(my-30)+'px';
+          tip.innerHTML = br.label+'<br>FCF: '+fmtOku(br.val)+'<br>累積: '+fmtOku(lineData[idx]);
+          found = true; break;
+        }
+      }
+      if (!found) tip.style.display='none';
+    };
+    canvas.onmouseleave = ()=>{ tip.style.display='none'; };
+  }
+}
+
+function drawDonutChart(canvasId, data, labels, colors) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const setup = setupCanvas(canvas); if(!setup) return; const {ctx,w,h} = setup;
+  const cx=w/2, cy=h/2, r=Math.min(cx,cy)-40, ir=r*0.55;
+  const total = data.reduce((s,v)=>s+v,0);
+  if (total===0) return;
+
+  let angle = -Math.PI/2;
+  for (let i=0;i<data.length;i++) {
+    const slice = data[i]/total*Math.PI*2;
+    ctx.beginPath();
+    ctx.arc(cx,cy,r,angle,angle+slice);
+    ctx.arc(cx,cy,ir,angle+slice,angle,true);
+    ctx.closePath();
+    ctx.fillStyle=colors[i];
+    ctx.fill();
+
+    // Label
+    const mid = angle+slice/2;
+    const lx = cx+Math.cos(mid)*(r+20);
+    const ly = cy+Math.sin(mid)*(r+20);
+    ctx.fillStyle='#333'; ctx.font='11px sans-serif';
+    ctx.textAlign=lx>cx?'left':'right';
+    if (data[i]>0) {
+      ctx.fillText(labels[i]+' '+(data[i]/total*100).toFixed(1)+'%', lx, ly);
+    }
+    angle += slice;
+  }
+
+  // Center text
+  ctx.fillStyle='#333'; ctx.font='bold 14px sans-serif'; ctx.textAlign='center';
+  ctx.fillText('調達合計', cx, cy-6);
+  ctx.fillText(fmtOku(total), cx, cy+14);
+}
+
+function drawHeatmap(canvasId, matrix, rowLabels, colLabels, tooltipId) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const setup = setupCanvas(canvas); if(!setup) return; const {ctx,w,h} = setup;
+  const pad = {t:40, r:20, b:30, l:100};
+  const rows=matrix.length, cols=matrix[0].length;
+  const cw=(w-pad.l-pad.r)/cols;
+  const ch=(h-pad.t-pad.b)/rows;
+
+  ctx.clearRect(0,0,w,h);
+
+  // Find range
+  let allV = matrix.flat();
+  let maxAbs = Math.max(Math.abs(Math.min(...allV)), Math.abs(Math.max(...allV)))||1;
+
+  const cellRects = [];
+  for (let r=0;r<rows;r++) {
+    for (let c=0;c<cols;c++) {
+      const v = matrix[r][c];
+      const x = pad.l+c*cw;
+      const y = pad.t+r*ch;
+
+      // Color interpolation
+      let red, green, blue;
+      if (v>=0) {
+        const t = Math.min(v/maxAbs,1);
+        red = Math.round(255*(1-t));
+        green = Math.round(176+79*t);
+        blue = Math.round(255*(1-t*0.7));
+      } else {
+        const t = Math.min(-v/maxAbs,1);
+        red = Math.round(192+63*t);
+        green = Math.round(255*(1-t*0.8));
+        blue = Math.round(255*(1-t*0.8));
+      }
+      ctx.fillStyle=`rgb(${red},${green},${blue})`;
+      ctx.fillRect(x,y,cw,ch);
+      ctx.strokeStyle='#fff'; ctx.lineWidth=1;
+      ctx.strokeRect(x,y,cw,ch);
+
+      // Text
+      ctx.fillStyle=Math.abs(v)<maxAbs*0.3?'#333':'#fff';
+      ctx.font='bold 11px sans-serif'; ctx.textAlign='center';
+      ctx.fillText(fmtHyakuMan(v), x+cw/2, y+ch/2+4);
+
+      cellRects.push({x,y,w:cw,h:ch,val:v,row:rowLabels[r],col:colLabels[c]});
+    }
+  }
+
+  // Row labels
+  ctx.fillStyle='#333'; ctx.font='11px sans-serif'; ctx.textAlign='right';
+  for (let r=0;r<rows;r++) {
+    ctx.fillText(rowLabels[r], pad.l-6, pad.t+r*ch+ch/2+4);
+  }
+  // Col labels
+  ctx.textAlign='center';
+  for (let c=0;c<cols;c++) {
+    ctx.fillText(colLabels[c], pad.l+c*cw+cw/2, pad.t-8);
+  }
+  // Axis titles
+  ctx.fillStyle='#666'; ctx.font='bold 12px sans-serif';
+  ctx.textAlign='center';
+  ctx.fillText('粗利率変動(pt)', w/2, pad.t-24);
+  ctx.save();
+  ctx.translate(14,h/2); ctx.rotate(-Math.PI/2);
+  ctx.fillText('稼働率変動',0,0);
+  ctx.restore();
+
+  if (tooltipId) {
+    const tip = document.getElementById(tooltipId);
+    canvas.onmousemove = function(e) {
+      const rect=canvas.getBoundingClientRect();
+      const mx=e.clientX-rect.left, my=e.clientY-rect.top;
+      let found=false;
+      for (const cr of cellRects) {
+        if (mx>=cr.x&&mx<=cr.x+cr.w&&my>=cr.y&&my<=cr.y+cr.h) {
+          tip.style.display='block';
+          tip.style.left=(mx+10)+'px'; tip.style.top=(my-30)+'px';
+          tip.innerHTML='稼働率: '+cr.row+'<br>粗利率: '+cr.col+'<br>営業利益: '+fmtOku(cr.val);
+          found=true; break;
+        }
+      }
+      if (!found) tip.style.display='none';
+    };
+    canvas.onmouseleave=()=>{tip.style.display='none';};
+  }
+}
+
+function drawTornado(canvasId, items) {
+  // items: [{label, low, high}] sorted by impact
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const setup = setupCanvas(canvas); if(!setup) return; const {ctx,w,h} = setup;
+  const pad = {t:20, r:60, b:30, l:160};
+  const n = items.length;
+  if (n===0) return;
+  const rh = (h-pad.t-pad.b)/n;
+
+  ctx.clearRect(0,0,w,h);
+
+  const allVals = items.flatMap(i=>[i.low,i.high]);
+  const minV=Math.min(0,...allVals), maxV=Math.max(0,...allVals);
+  const range=maxV-minV||1;
+
+  function xPos(v) { return pad.l + (v-minV)/(maxV-minV)*(w-pad.l-pad.r); }
+  const zx = xPos(0);
+
+  // Zero line
+  ctx.strokeStyle='#333'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(zx,pad.t); ctx.lineTo(zx,h-pad.b); ctx.stroke();
+
+  for (let i=0;i<n;i++) {
+    const y = pad.t+i*rh+rh*0.15;
+    const bh = rh*0.7;
+    const item = items[i];
+
+    // Low bar (left of zero)
+    const lx = xPos(item.low);
+    ctx.fillStyle='#C00000';
+    ctx.fillRect(Math.min(lx,zx), y, Math.abs(lx-zx), bh);
+
+    // High bar (right of zero)
+    const hx = xPos(item.high);
+    ctx.fillStyle='#00B050';
+    ctx.fillRect(Math.min(hx,zx), y, Math.abs(hx-zx), bh);
+
+    // Label
+    ctx.fillStyle='#333'; ctx.font='12px sans-serif'; ctx.textAlign='right';
+    ctx.fillText(item.label, pad.l-6, y+bh/2+4);
+
+    // Values
+    ctx.textAlign='left'; ctx.font='10px sans-serif'; ctx.fillStyle='#666';
+    ctx.fillText(fmtOku(item.low), Math.min(lx,zx)-4<pad.l?Math.min(lx,zx)+2:Math.min(lx,zx)-50, y+bh/2+4);
+  }
+}
+
+function drawHistogram(canvasId, data, bins=30) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const setup = setupCanvas(canvas); if(!setup) return; const {ctx,w,h} = setup;
+  const pad = {t:30, r:30, b:50, l:80};
+
+  ctx.clearRect(0,0,w,h);
+
+  const minV=data.min, maxV=data.max;
+  const range=maxV-minV||1;
+  const binW=range/bins;
+  const counts=new Array(bins).fill(0);
+  for (const v of data.results) {
+    const idx=Math.min(Math.floor((v-minV)/binW), bins-1);
+    counts[idx]++;
+  }
+  const maxC=Math.max(...counts);
+  const cw=(w-pad.l-pad.r)/bins;
+  const ch=h-pad.t-pad.b;
+
+  // Bars
+  for (let i=0;i<bins;i++) {
+    const x=pad.l+i*cw;
+    const bh=counts[i]/maxC*ch;
+    const y=pad.t+ch-bh;
+    const v=minV+i*binW+binW/2;
+    const inCI = v>=data.p5 && v<=data.p95;
+    ctx.fillStyle=inCI?'#4472C4':'#B0C4DE';
+    ctx.fillRect(x,y,cw-1,bh);
+  }
+
+  // Mean line
+  const meanX = pad.l+(data.mean-minV)/(maxV-minV)*(w-pad.l-pad.r);
+  ctx.strokeStyle='#002060'; ctx.lineWidth=2; ctx.setLineDash([6,3]);
+  ctx.beginPath(); ctx.moveTo(meanX,pad.t); ctx.lineTo(meanX,h-pad.b); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Median line
+  const medX = pad.l+(data.median-minV)/(maxV-minV)*(w-pad.l-pad.r);
+  ctx.strokeStyle='#C00000'; ctx.lineWidth=2; ctx.setLineDash([4,4]);
+  ctx.beginPath(); ctx.moveTo(medX,pad.t); ctx.lineTo(medX,h-pad.b); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // X axis labels
+  ctx.fillStyle='#666'; ctx.font='10px sans-serif'; ctx.textAlign='center';
+  for (let i=0;i<=5;i++) {
+    const v=minV+range*i/5;
+    const x=pad.l+(v-minV)/(maxV-minV)*(w-pad.l-pad.r);
+    ctx.fillText(fmtOku(v), x, h-pad.b+16);
+  }
+
+  // Legend
+  ctx.fillStyle='#002060'; ctx.font='11px sans-serif'; ctx.textAlign='left';
+  ctx.fillText('--- 平均: '+fmtOku(data.mean), pad.l, pad.t-8);
+  ctx.fillStyle='#C00000';
+  ctx.fillText('--- 中央値: '+fmtOku(data.median), pad.l+200, pad.t-8);
+}
+
+function drawBarChart(canvasId, labels, data, colors) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const setup = setupCanvas(canvas); if(!setup) return; const {ctx,w,h} = setup;
+  const pad = {t:20, r:20, b:60, l:60};
+  const n = labels.length;
+  const cw = (w-pad.l-pad.r)/n;
+  const ch = h-pad.t-pad.b;
+
+  ctx.clearRect(0,0,w,h);
+
+  const maxV = Math.max(...data.map(d=>Math.max(...d)));
+  const minV = Math.min(0,...data.map(d=>Math.min(...d)));
+  const range = maxV-minV||1;
+  function yP(v) { return pad.t+ch*(1-(v-minV)/range); }
+
+  // Grid
+  ctx.strokeStyle='#e0e0e0'; ctx.lineWidth=0.5;
+  for (let i=0;i<=4;i++) {
+    const v=minV+range*i/4;
+    const y=yP(v);
+    ctx.beginPath(); ctx.moveTo(pad.l,y); ctx.lineTo(w-pad.r,y); ctx.stroke();
+    ctx.fillStyle='#888'; ctx.font='10px sans-serif'; ctx.textAlign='right';
+    ctx.fillText(fmtOku(v),pad.l-4,y+3);
+  }
+
+  const groupW = cw*0.8;
+  const barW = groupW / data.length;
+  for (let g=0;g<n;g++) {
+    for (let s=0;s<data.length;s++) {
+      const x = pad.l+g*cw+(cw-groupW)/2+s*barW;
+      const zy=yP(0), vy=yP(data[s][g]);
+      ctx.fillStyle=colors[s];
+      ctx.fillRect(x,Math.min(zy,vy),barW-2,Math.abs(zy-vy));
+    }
+    ctx.fillStyle='#555'; ctx.font='10px sans-serif'; ctx.textAlign='center';
+    ctx.fillText(labels[g], pad.l+g*cw+cw/2, h-pad.b+14);
+  }
+}
+
+/* ============================================================
+   INPUT PANEL BUILDER
+   ============================================================ */
+let debounceTimer = null;
+function onParamChange() {
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(recalcAll, 50);
+}
+
+function makeInput(container, label, path, idx, opts={}) {
+  const {min=0, max=10000000000, step=1, fmt='num', note=''} = opts;
+  const row = document.createElement('div');
+  row.className = 'input-row';
+
+  const lbl = document.createElement('label');
+  lbl.textContent = label;
+  row.appendChild(lbl);
+
+  // Get current value
+  let val = getNestedVal(path, idx);
+
+  const numInput = document.createElement('input');
+  numInput.type = 'number';
+  numInput.value = val;
+  numInput.min = min;
+  numInput.max = max;
+  numInput.step = step;
+
+  row.appendChild(numInput);
+
+  // Slider for numeric values
+  const slider = document.createElement('input');
+  slider.type = 'range';
+  slider.min = min;
+  slider.max = max;
+  slider.step = step;
+  slider.value = val;
+
+  slider.addEventListener('input', function() {
+    numInput.value = this.value;
+    setNestedVal(path, idx, parseFloat(this.value)||0);
+    onParamChange();
+  });
+  numInput.addEventListener('input', function() {
+    slider.value = this.value;
+    setNestedVal(path, idx, parseFloat(this.value)||0);
+    onParamChange();
+  });
+
+  const sliderDiv = document.createElement('div');
+  sliderDiv.className = 'slider-group';
+  sliderDiv.appendChild(slider);
+  row.appendChild(sliderDiv);
+
+  const noteSpan = document.createElement('span');
+  noteSpan.className = 'note';
+  noteSpan.textContent = note;
+  row.appendChild(noteSpan);
+
+  container.appendChild(row);
+  return numInput;
+}
+
+function makeSubTotal(container, label, valueFn) {
+  const row = document.createElement('div');
+  row.className = 'input-row sub-total';
+  row.innerHTML = '<label>'+label+'</label><span class="computed-val" data-calc="'+label+'"></span><span></span><span></span>';
+  container.appendChild(row);
+  return row;
+}
+
+function getNestedVal(path, idx) {
+  const parts = path.split('.');
+  let obj = P;
+  for (const p of parts) obj = obj[p];
+  if (idx !== undefined && idx !== null) return Array.isArray(obj) ? obj[idx] : obj;
+  return obj;
+}
+
+function setNestedVal(path, idx, val) {
+  const parts = path.split('.');
+  let obj = P;
+  for (let i=0;i<parts.length-1;i++) obj = obj[parts[i]];
+  const key = parts[parts.length-1];
+  if (idx !== undefined && idx !== null && Array.isArray(obj[key])) {
+    obj[key][idx] = val;
+  } else {
+    obj[key] = val;
+  }
+}
+
+function buildInputPanel() {
+  // Basic info
+  const sec1 = document.getElementById('secBasic');
+  sec1.innerHTML = '';
+  makeInput(sec1, '営業日数/月', 'daysPerMonth', null, {min:25,max:31,step:1,note:'日'});
+
+  // Machines
+  const sec2 = document.getElementById('secMachines');
+  sec2.innerHTML = '<div style="font-size:11px;color:#888;margin-bottom:8px;">プランB台数を入力（シミュレーション対象）</div>';
+  const machLabels = {p4:'4円P', p1:'1円P', p02:'0.2円P', s20:'20円S', s10:'10円S', s5:'5円S', s2:'2円S'};
+  for (const [k,lbl] of Object.entries(machLabels)) {
+    makeInput(sec2, lbl, 'machines.'+k, 1, {min:0,max:2000,step:1,note:'台'});
+  }
+
+  // Sales
+  const sec3 = document.getElementById('secSales');
+  sec3.innerHTML = '';
+  const salesUnits = {p4:'4円P', p1:'1円P', s20:'20円S', s5:'5円S'};
+  for (const [k,lbl] of Object.entries(salesUnits)) {
+    const h = document.createElement('div');
+    h.style.cssText='font-weight:700;color:var(--heading);padding:8px 0 4px;border-bottom:1px solid var(--border);margin-top:8px;';
+    h.textContent = '【'+lbl+'】';
+    sec3.appendChild(h);
+    makeInput(sec3, 'アウト(1日台アウト)', 'sales.'+k+'.out', 1, {min:0,max:100000,step:100,note:'玉/枚'});
+    makeInput(sec3, '玉単価', 'sales.'+k+'.tp', 1, {min:0,max:20,step:0.001,note:'円'});
+    makeInput(sec3, '玉粗利', 'sales.'+k+'.tg', 1, {min:0,max:5,step:0.001,note:'円'});
+  }
+
+  // Expenses
+  const sec4 = document.getElementById('secExpenses');
+  sec4.innerHTML = '';
+  const hrLabels = {salary:'給料手当',bonus:'賞与',recruit:'採用費',legal:'法定福利費',welfare:'福利厚生費',retire:'退職給付金'};
+  let h = document.createElement('div'); h.style.cssText='font-weight:700;color:var(--heading);padding:6px 0;'; h.textContent='【人件費】'; sec4.appendChild(h);
+  for (const [k,lbl] of Object.entries(hrLabels)) {
+    makeInput(sec4, lbl, 'expenses.hr.'+k, 1, {min:0,max:50000000,step:10000,note:'円/月'});
+  }
+
+  const mgmtLabels = {ad:'広告宣伝費',promo:'販売促進費',machineBuy:'遊技機購入費',maint:'保守修繕費',supply:'消耗品費',hygiene:'衛生費',utility:'水道光熱費',telecom:'通信費',office:'事務用品費',freight:'運賃',dues:'諸会費',travel:'旅費交通費'};
+  h = document.createElement('div'); h.style.cssText='font-weight:700;color:var(--heading);padding:6px 0;margin-top:12px;'; h.textContent='【運営管理可能費】'; sec4.appendChild(h);
+  for (const [k,lbl] of Object.entries(mgmtLabels)) {
+    makeInput(sec4, lbl, 'expenses.mgmt.'+k, 1, {min:0,max:100000000,step:10000,note:'円/月'});
+  }
+
+  const fixedLabels = {lease:'リース料',rent:'家賃',fee:'支払手数料',taxMisc:'租税公課',outsource:'業務委託料',insurance:'支払保険料',misc:'雑費'};
+  h = document.createElement('div'); h.style.cssText='font-weight:700;color:var(--heading);padding:6px 0;margin-top:12px;'; h.textContent='【運営管理不能費】'; sec4.appendChild(h);
+  for (const [k,lbl] of Object.entries(fixedLabels)) {
+    makeInput(sec4, lbl, 'expenses.fixed.'+k, 1, {min:0,max:50000000,step:10000,note:'円/月'});
+  }
+
+  // Investment
+  const sec5 = document.getElementById('secInvestment');
+  sec5.innerHTML = '';
+  const acqLabels = {transfer:'営業譲渡',machine:'遊技機売買',interior:'内装設備売買',compensation:'営業補償',deposit:'保証金',gift:'礼金',association:'建協金',parking:'駐車場'};
+  h = document.createElement('div'); h.style.cssText='font-weight:700;color:var(--heading);padding:6px 0;'; h.textContent='【取得費用】'; sec5.appendChild(h);
+  for (const [k,lbl] of Object.entries(acqLabels)) {
+    makeInput(sec5, lbl, 'investment.acquisition.'+k, null, {min:0,max:5000000000,step:10000000,note:'円'});
+  }
+  const renLabels = {pIsland:'P島(補給込み)',sIsland:'S島(補給込み)',hc:'HC一式',sand:'サンド',pCall:'Pコールランプ',sCall:'Sコールランプ',chair:'椅子',sign:'外部サイン',partition:'パーテーション',exterior:'内外装概算'};
+  h = document.createElement('div'); h.style.cssText='font-weight:700;color:var(--heading);padding:6px 0;margin-top:12px;'; h.textContent='【改装費用】'; sec5.appendChild(h);
+  for (const [k,lbl] of Object.entries(renLabels)) {
+    makeInput(sec5, lbl, 'investment.renovation.'+k, null, {min:0,max:2000000000,step:1000000,note:'円'});
+  }
+  const pmiLabels = {system:'システム統合',training:'従業員研修・採用',uniform:'制服・販促物刷新',grandOpen:'グランドオープン費用'};
+  h = document.createElement('div'); h.style.cssText='font-weight:700;color:var(--heading);padding:6px 0;margin-top:12px;'; h.textContent='【PMI統合費用】'; sec5.appendChild(h);
+  for (const [k,lbl] of Object.entries(pmiLabels)) {
+    makeInput(sec5, lbl, 'investment.pmi.'+k, null, {min:0,max:500000000,step:1000000,note:'円'});
+  }
+
+  // Finance
+  const sec6 = document.getElementById('secFinance');
+  sec6.innerHTML = '';
+  makeInput(sec6, '自己資金額', 'finance.equity', null, {min:0,max:5000000000,step:10000000,note:'円'});
+  makeInput(sec6, '銀行借入1', 'finance.loan1', null, {min:0,max:5000000000,step:10000000,note:'円'});
+  makeInput(sec6, '銀行借入2', 'finance.loan2', null, {min:0,max:5000000000,step:10000000,note:'円'});
+  makeInput(sec6, '銀行借入3', 'finance.loan3', null, {min:0,max:5000000000,step:10000000,note:'円'});
+  makeInput(sec6, '金利(年利)', 'finance.interest', null, {min:0,max:0.10,step:0.001,note:'%表示'});
+  makeInput(sec6, '返済期間(年)', 'finance.loanYears', null, {min:1,max:30,step:1,note:'年'});
+  h = document.createElement('div'); h.style.cssText='font-weight:700;color:var(--heading);padding:8px 0;margin-top:12px;'; h.textContent='WACC'; sec6.appendChild(h);
+  makeInput(sec6, '自己資本コスト(Re)', 'wacc.re', null, {min:0,max:0.30,step:0.005,note:'%'});
+  makeInput(sec6, '法人税率', 'wacc.taxRate', null, {min:0,max:0.60,step:0.0001,note:'%'});
+  h = document.createElement('div'); h.style.cssText='font-weight:700;color:var(--heading);padding:8px 0;margin-top:12px;'; h.textContent='のれん'; sec6.appendChild(h);
+  makeInput(sec6, '対象企業純資産額', 'goodwill.netAssets', null, {min:0,max:5000000000,step:10000000,note:'円'});
+  makeInput(sec6, 'のれん償却年数', 'goodwill.amortYears', null, {min:1,max:20,step:1,note:'年'});
+
+  // Yearly
+  const sec7 = document.getElementById('secYearly');
+  sec7.innerHTML = '<div style="font-size:12px;color:#888;margin-bottom:8px;">基本成長率(全年共通)。個別年度は下の表で上書き可能。</div>';
+  makeInput(sec7, '稼働率変動(年率)', 'yearlyGrowth.occupancy', null, {min:-0.20,max:0.10,step:0.005,note:'%/年'});
+  makeInput(sec7, '人件費上昇率(年率)', 'yearlyGrowth.hr', null, {min:0,max:0.10,step:0.005,note:'%/年'});
+  makeInput(sec7, '光熱費上昇率(年率)', 'yearlyGrowth.utility', null, {min:0,max:0.10,step:0.005,note:'%/年'});
+  makeInput(sec7, '家賃変動(年率)', 'yearlyGrowth.rent', null, {min:-0.05,max:0.05,step:0.005,note:'%/年'});
+  makeInput(sec7, '遊技機単価変動(年率)', 'yearlyGrowth.machine', null, {min:0,max:0.10,step:0.005,note:'%/年'});
+
+  // Year-by-year override table
+  h = document.createElement('div'); h.style.cssText='font-weight:700;margin-top:12px;margin-bottom:4px;'; h.textContent='個別年度上書き（稼働率変動）'; sec7.appendChild(h);
+  const overrideDiv = document.createElement('div');
+  overrideDiv.style.cssText='display:flex;flex-wrap:wrap;gap:4px;';
+  for (let yr=0;yr<10;yr++) {
+    const wrap = document.createElement('div');
+    wrap.style.cssText='text-align:center;';
+    const lab = document.createElement('div');
+    lab.style.cssText='font-size:10px;color:#888;';
+    lab.textContent=(yr+1)+'年目';
+    wrap.appendChild(lab);
+    const inp = document.createElement('input');
+    inp.type='number'; inp.step='0.01'; inp.style.cssText='width:60px;text-align:center;font-size:11px;padding:2px;';
+    const ov = P.yearlyOverride.occupancy[yr];
+    inp.value = ov!==null&&ov!==undefined ? ov : '';
+    inp.placeholder='auto';
+    const yIdx = yr;
+    inp.addEventListener('input', function() {
+      P.yearlyOverride.occupancy[yIdx] = this.value===''?null:parseFloat(this.value);
+      onParamChange();
+    });
+    wrap.appendChild(inp);
+    overrideDiv.appendChild(wrap);
+  }
+  sec7.appendChild(overrideDiv);
+
+  // Stress / TV settings
+  const sec8 = document.getElementById('secStress');
+  sec8.innerHTML = '';
+  h = document.createElement('div'); h.style.cssText='font-weight:700;color:var(--heading);padding:6px 0;'; h.textContent='Terminal Value'; sec8.appendChild(h);
+  // TV method
+  const tvSelect = document.createElement('div');
+  tvSelect.className='input-row';
+  tvSelect.innerHTML = '<label>算定方式</label><select id="tvMethod" style="padding:4px;border:1px solid var(--border);border-radius:4px;"><option value="ebitda">EBITDA倍率法</option><option value="dcg">永久成長率法</option></select><span></span><span></span>';
+  sec8.appendChild(tvSelect);
+  setTimeout(()=>{
+    document.getElementById('tvMethod').value = P.tv.method;
+    document.getElementById('tvMethod').addEventListener('change',function(){P.tv.method=this.value;onParamChange();});
+  },0);
+  makeInput(sec8, '永久成長率(g)', 'tv.growthRate', null, {min:-0.05,max:0.02,step:0.005,note:'%'});
+  makeInput(sec8, 'EBITDA倍率', 'tv.multiple', null, {min:1,max:10,step:0.1,note:'x'});
+}
+
+/* ============================================================
+   RENDER FUNCTIONS
+   ============================================================ */
+function renderDashboard(cf) {
+  const wacc = calcWACC();
+  const fcfs = cf.map(c=>c.fcf);
+  const irr = calcIRR(fcfs);
+  const npv = calcNPV(wacc, fcfs);
+  const mirr = calcMIRR(fcfs, P.finance.interest, wacc);
+  const pp = calcPaybackPeriod(cf);
+  const bep = calcBEP();
+  const tv = calcTerminalValue(cf);
+  const totalInv = calcTotalInvestment();
+  const j = calcJudgment(cf);
+
+  // Judgment panel
+  const jp = document.getElementById('judgmentPanel');
+  jp.className = 'judgment-panel ' + (j.overall==='GO'?'go':j.overall==='COND'?'cond':'nogo');
+  document.getElementById('judgmentLabel').textContent = j.overall==='GO'?'GO':j.overall==='COND'?'CONDITIONAL':'NO-GO';
+  document.getElementById('judgmentSub').textContent = 'IRR '+fmtPct(irr||0)+' / NPV '+fmtOku(npv)+' / 回収 '+(pp.total===Infinity?'10年超':pp.years+'年'+pp.months+'ヶ月');
+
+  const det = document.getElementById('judgmentDetails');
+  const labels = {irr:'IRR vs WACC', npv:'NPV', payback:'回収期間', stress:'ストレス耐性', bep:'損益分岐稼働率'};
+  det.innerHTML = '';
+  for (const [k,lbl] of Object.entries(labels)) {
+    const cls = j[k]==='GO'?'badge-go':j[k]==='COND'?'badge-cond':'badge-nogo';
+    det.innerHTML += '<span class="judgment-item"><span class="kpi-badge '+cls+'">'+j[k]+'</span> '+lbl+'</span>';
+  }
+
+  // KPI cards
+  const kpis = [
+    {label:'投資総額',value:fmtOku(totalInv),sub:'うちPMI '+fmtMan(Object.values(P.investment.pmi).reduce((s,v)=>s+v,0))},
+    {label:'年間CF(初年度)',value:fmtOku(cf[1].opCF),sub:'営業CF'},
+    {label:'IRR / MIRR',value:fmtPct(irr||0),sub:'MIRR '+fmtPct(mirr||0),badge:j.irr},
+    {label:'投資回収期間',value:pp.total===Infinity?'10年超':pp.years+'年'+pp.months+'ヶ月',sub:'',badge:j.payback},
+    {label:'損益分岐稼働率',value:fmtPct1(bep),sub:'BEP',badge:j.bep},
+    {label:'Terminal Value',value:fmtOku(tv.pvTV),sub:'PV換算'}
+  ];
+  document.getElementById('dashKPIs').innerHTML = kpis.map(k=>{
+    let badgeHtml = '';
+    if (k.badge) {
+      const cls=k.badge==='GO'?'badge-go':k.badge==='COND'?'badge-cond':'badge-nogo';
+      badgeHtml='<div class="kpi-badge '+cls+'">'+k.badge+'</div>';
+    }
+    return '<div class="kpi-card"><div class="kpi-label">'+k.label+'</div><div class="kpi-value">'+k.value+'</div><div class="kpi-sub">'+k.sub+'</div>'+badgeHtml+'</div>';
+  }).join('');
+
+  // Dashboard chart
+  const labels2 = cf.map(c=>c.year+'年目');
+  labels2[0] = '初期投資';
+  drawComboChart('dashChart', labels2, cf.map(c=>c.fcf), cf.map(c=>c.cumCF), 'dashTooltip');
+}
+
+function renderCFTable(cf) {
+  const rows = [
+    {label:'売上高', key:'sales'},
+    {label:'売上原価', key:'cogs'},
+    {label:'売上総利益', key:'gross', cls:'total-row'},
+    {label:'人件費', key:'hr'},
+    {label:'運営管理可能費', key:'mgmt'},
+    {label:'運営管理不能費(償却除く)', key:'fixedExDepr'},
+    {label:'減価償却費', key:'depr'},
+    {label:'のれん償却費', key:'norenAmort'},
+    {label:'営業利益', key:'opProfit', cls:'total-row'},
+    {label:'支払利息', key:'interest'},
+    {label:'法人税等', key:'tax'},
+    {label:'税引後利益', key:'afterTax', cls:'total-row'},
+    {label:'+減価償却費', key:'addDepr'},
+    {label:'+のれん償却費', key:'addNoren'},
+    {label:'営業CF', key:'opCF', cls:'total-row'},
+    {label:'-遊技機再投資Capex', key:'capex'},
+    {label:'-借入返済(元金)', key:'repay'},
+    {label:'-リース支払', key:'lease'},
+    {label:'フリーCF', key:'fcf', cls:'highlight-row'},
+    {label:'累積CF', key:'cumCF', cls:'highlight-row'},
+    {label:'借入金残高', key:'loanBal'},
+  ];
+
+  let html = '<thead><tr><th>項目 (百万円)</th>';
+  for (let yr=0;yr<=10;yr++) html += '<th>'+(yr===0?'0年目':yr+'年目')+'</th>';
+  html += '<th>合計</th></tr></thead><tbody>';
+
+  for (const row of rows) {
+    const cls = row.cls ? ' class="'+row.cls+'"' : '';
+    html += '<tr'+cls+'><td>'+row.label+'</td>';
+    let sum = 0;
+    for (let yr=0;yr<=10;yr++) {
+      const v = cf[yr][row.key];
+      sum += v;
+      const vcls = v<0?' class="negative"':v>0&&(row.key==='opProfit'||row.key==='fcf')?' class="positive"':'';
+      html += '<td'+vcls+'>'+fmtHM(v)+'</td>';
+    }
+    if (row.key==='cumCF'||row.key==='loanBal') {
+      html += '<td>'+fmtHM(cf[10][row.key])+'</td>';
+    } else {
+      html += '<td>'+fmtHM(sum)+'</td>';
+    }
+    html += '</tr>';
+  }
+
+  // Margin rows
+  html += '<tr class="total-row"><td>売上総利益率</td>';
+  for (let yr=0;yr<=10;yr++) html += '<td>'+(cf[yr].grossMargin*100).toFixed(1)+'%</td>';
+  html += '<td>-</td></tr>';
+  html += '<tr class="total-row"><td>営業利益率</td>';
+  for (let yr=0;yr<=10;yr++) html += '<td>'+(cf[yr].opMargin*100).toFixed(1)+'%</td>';
+  html += '<td>-</td></tr>';
+
+  html += '</tbody>';
+  document.getElementById('cfTable').innerHTML = html;
+
+  // CF Chart
+  const labels = cf.map(c=>(c.year===0?'初期':c.year+'年'));
+  drawComboChart('cfChart', labels, cf.map(c=>c.fcf), cf.map(c=>c.cumCF), 'cfTooltip');
+}
+
+function renderMetrics(cf) {
+  const wacc = calcWACC();
+  const fcfs = cf.map(c=>c.fcf);
+  const irr = calcIRR(fcfs);
+  const npv = calcNPV(wacc, fcfs);
+  const mirr = calcMIRR(fcfs, P.finance.interest, wacc);
+  const roi = calcROI(cf);
+  const pp = calcPaybackPeriod(cf);
+  const bep = calcBEP();
+  const tv = calcTerminalValue(cf);
+  const j = calcJudgment(cf);
+
+  const metrics = [
+    {label:'ROI',value:(roi*100).toFixed(1)+'%',sub:'10年累積CF/投資額'},
+    {label:'IRR',value:fmtPct(irr||0),sub:'内部収益率',badge:j.irr},
+    {label:'MIRR',value:fmtPct(mirr||0),sub:'修正内部収益率'},
+    {label:'NPV',value:fmtOku(npv),sub:'正味現在価値',badge:j.npv},
+    {label:'回収期間',value:pp.total===Infinity?'10年超':pp.years+'年'+pp.months+'ヶ月',sub:'Payback Period',badge:j.payback},
+    {label:'WACC',value:fmtPct(wacc),sub:'加重平均資本コスト'},
+    {label:'IRR-WACCスプレッド',value:fmtPct((irr||0)-wacc),sub:'超過収益率'},
+    {label:'損益分岐稼働率',value:fmtPct1(bep),sub:'BEP',badge:j.bep}
+  ];
+
+  document.getElementById('metricsKPIs').innerHTML = metrics.map(k=>{
+    let bHtml='';
+    if (k.badge) {
+      const cls=k.badge==='GO'?'badge-go':k.badge==='COND'?'badge-cond':'badge-nogo';
+      bHtml='<div class="kpi-badge '+cls+'">'+k.badge+'</div>';
+    }
+    return '<div class="kpi-card"><div class="kpi-label">'+k.label+'</div><div class="kpi-value">'+k.value+'</div><div class="kpi-sub">'+k.sub+'</div>'+bHtml+'</div>';
+  }).join('');
+
+  // Terminal Value
+  document.getElementById('tvSection').innerHTML =
+    '<div class="kpi-grid" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr));">'+
+    '<div class="kpi-card"><div class="kpi-label">永久成長率法</div><div class="kpi-value">'+fmtOku(tv.tvDCG)+'</div><div class="kpi-sub">g='+fmtPct1(P.tv.growthRate)+'</div></div>'+
+    '<div class="kpi-card"><div class="kpi-label">EBITDA倍率法</div><div class="kpi-value">'+fmtOku(tv.tvEBITDA)+'</div><div class="kpi-sub">'+P.tv.multiple+'x</div></div>'+
+    '<div class="kpi-card" style="border-color:var(--heading);border-width:2px;"><div class="kpi-label">採用値('+P.tv.method.toUpperCase()+')</div><div class="kpi-value">'+fmtOku(tv.tv)+'</div><div class="kpi-sub">PV: '+fmtOku(tv.pvTV)+'</div></div>'+
+    '</div>';
+
+  // Loan schedule
+  const ls = calcLoanSchedule();
+  let lhtml = '<thead><tr><th>年</th><th>期首残高 (百万円)</th><th>元金返済</th><th>利息</th><th>返済合計</th><th>期末残高</th></tr></thead><tbody>';
+  for (const s of ls.schedule.slice(0,Math.min(ls.schedule.length,12))) {
+    lhtml += '<tr><td>'+s.year+'年目</td><td>'+fmtHM(s.startBal)+'</td><td>'+fmtHM(s.principal)+'</td><td>'+fmtHM(s.interest)+'</td><td>'+fmtHM(s.total)+'</td><td>'+fmtHM(s.endBal)+'</td></tr>';
+  }
+  lhtml += '</tbody>';
+  document.getElementById('loanTable').innerHTML = lhtml;
+
+  // Donut chart
+  const finData = [P.finance.equity, P.finance.loan1, P.finance.loan2, P.finance.loan3].filter(v=>v>0);
+  const finLabels = ['自己資金','銀行借入1','銀行借入2','銀行借入3'].filter((_,i)=>[P.finance.equity,P.finance.loan1,P.finance.loan2,P.finance.loan3][i]>0);
+  const finColors = ['#4472C4','#ED7D31','#A5A5A5','#FFC000'];
+  drawDonutChart('donutChart', finData, finLabels, finColors.slice(0,finData.length));
+}
+
+function renderStressTest(cf) {
+  const st = calcStressTest(cf);
+  const wacc = calcWACC();
+  const baseFCF = cf.map(c=>c.fcf);
+  const baseIRR = calcIRR(baseFCF);
+  const baseNPV = calcNPV(wacc, baseFCF);
+  const baseCum = baseFCF.reduce((s,v)=>s+v,0);
+
+  let html = '';
+
+  function scenarioTable(title, results, labels) {
+    let t = '<div class="stress-scenario"><h4>'+title+'</h4>';
+    t += '<table class="data-table" style="width:100%"><thead><tr><th>指標</th><th>基準ケース</th>';
+    for (const l of labels) t += '<th>'+l+'</th>';
+    t += '<th>最大差異</th></tr></thead><tbody>';
+
+    // IRR
+    t += '<tr><td>IRR</td><td>'+(baseIRR!==null?fmtPct(baseIRR):'N/A')+'</td>';
+    let maxDiffIRR = 0;
+    for (const r of results) {
+      if (r.irr===null) { t += '<td class="negative">N/A</td>'; continue; }
+      const d = r.irr-(baseIRR||0);
+      if (Math.abs(d)>Math.abs(maxDiffIRR)) maxDiffIRR=d;
+      t += '<td class="'+(r.irr<wacc?'negative':'')+'">'+fmtPct(r.irr)+'</td>';
+    }
+    t += '<td class="negative">'+(maxDiffIRR!==0?fmtPct(maxDiffIRR):'-')+'</td></tr>';
+
+    // NPV (百万円)
+    t += '<tr><td>NPV (百万円)</td><td>'+fmtHM(baseNPV)+'</td>';
+    let maxDiffNPV=0;
+    for (const r of results) {
+      const d = r.npv-baseNPV;
+      if (Math.abs(d)>Math.abs(maxDiffNPV)) maxDiffNPV=d;
+      t += '<td class="'+(r.npv<0?'negative':'')+'">'+fmtHM(r.npv)+'</td>';
+    }
+    t += '<td class="negative">'+fmtHM(maxDiffNPV)+'</td></tr>';
+
+    // CumCF (百万円)
+    t += '<tr><td>10年累積CF (百万円)</td><td>'+fmtHM(baseCum)+'</td>';
+    for (const r of results) t += '<td class="'+(r.cumCF<0?'negative':'')+'">'+fmtHM(r.cumCF)+'</td>';
+    t += '<td>-</td></tr>';
+
+    // Black/Red
+    t += '<tr><td>黒字維持</td><td>-</td>';
+    for (const r of results) t += '<td>'+(r.cumCF>=0?'<span style="color:var(--go);font-weight:700">&#10003;</span>':'<span style="color:var(--nogo);font-weight:700">&#10007;</span>')+'</td>';
+    t += '<td>-</td></tr>';
+
+    t += '</tbody></table></div>';
+    return t;
+  }
+
+  html += scenarioTable('シナリオ1: 稼働率低下', st.occupancy, ['-10%','-20%','-30%']);
+  html += scenarioTable('シナリオ2: 規制・法改正(粗利率)', st.regulation, ['-1pt','-2pt','-3pt']);
+  html += scenarioTable('シナリオ3: 金利上昇', st.interest, ['+0.5%','+1.0%','+2.0%']);
+  html += scenarioTable('シナリオ4: 複合(最悪)', [st.complex], ['複合']);
+  html += scenarioTable('シナリオ5: 譲渡額変動', st.transfer, ['10億','12億','15億']);
+
+  document.getElementById('stressResults').innerHTML = html;
+
+  // Heatmap
+  const sens = calcSensitivityMatrix(cf);
+  const rowLabels = sens.occRates.map(r=>(r>=0?'+':'')+Math.round(r*100)+'%');
+  const colLabels = sens.profitDeltas.map(d=>(d>=0?'+':'')+Math.round(d*100)+'pt');
+  drawHeatmap('heatmapChart', sens.matrix, rowLabels, colLabels, 'heatTooltip');
+
+  // Tornado
+  const tornadoItems = [
+    {label:'稼働率 -20%', low:st.occupancy[1].npv-baseNPV, high:0},
+    {label:'粗利率 -2pt', low:st.regulation[1].npv-baseNPV, high:0},
+    {label:'金利 +1.0%', low:st.interest[1].npv-baseNPV, high:0},
+    {label:'譲渡額 10億→15億', low:st.transfer[2].npv-baseNPV, high:st.transfer[0].npv-baseNPV},
+    {label:'複合(最悪)', low:st.complex.npv-baseNPV, high:0}
+  ].sort((a,b) => Math.abs(a.low)-Math.abs(b.low));
+  tornadoItems.reverse();
+  drawTornado('tornadoChart', tornadoItems);
+
+  // Monte Carlo
+  const mc = runMonteCarlo(cf);
+  drawHistogram('monteChart', mc);
+  document.getElementById('monteStats').innerHTML =
+    '<strong>平均:</strong> '+fmtOku(mc.mean)+' | <strong>中央値:</strong> '+fmtOku(mc.median)+
+    ' | <strong>5%tile:</strong> '+fmtOku(mc.p5)+' | <strong>95%tile:</strong> '+fmtOku(mc.p95)+
+    ' | <strong>最小:</strong> '+fmtOku(mc.min)+' | <strong>最大:</strong> '+fmtOku(mc.max);
+}
+
+function renderCompetitors() {
+  // Cards
+  document.getElementById('compCards').innerHTML = competitors.map(c=>{
+    const total = c.p4+c.p1+c.p02+c.s20+c.s10+c.s5+c.s2;
+    const pTotal = c.p4+c.p1+c.p02;
+    const sTotal = c.s20+c.s10+c.s5+c.s2;
+    return '<div class="comp-card'+(c.self?' self-store':'')+'"><h4>'+c.name+(c.self?' (自店)':'')+'</h4>'+
+      '<div class="comp-stat"><span>総台数</span><span>'+total+'台</span></div>'+
+      '<div class="comp-stat"><span>P:S</span><span>'+pTotal+':'+sTotal+'</span></div>'+
+      '<div class="comp-stat"><span>駐車場</span><span>'+c.parking+'台</span></div></div>';
+  }).join('');
+
+  // Table
+  let html = '<thead><tr><th>店舗</th><th>4円P</th><th>1円P</th><th>0.2円P</th><th>20円S</th><th>10円S</th><th>5円S</th><th>2円S</th><th>合計</th><th>占有率</th></tr></thead><tbody>';
+  const grandTotal = competitors.reduce((s,c) => s+c.p4+c.p1+c.p02+c.s20+c.s10+c.s5+c.s2, 0);
+  for (const c of competitors) {
+    const total = c.p4+c.p1+c.p02+c.s20+c.s10+c.s5+c.s2;
+    const share = (total/grandTotal*100).toFixed(1);
+    const cls = c.self ? ' style="background:#f0f4ff;font-weight:700;"' : '';
+    html += '<tr'+cls+'><td>'+c.name+'</td><td>'+c.p4+'</td><td>'+c.p1+'</td><td>'+c.p02+'</td><td>'+c.s20+'</td><td>'+c.s10+'</td><td>'+c.s5+'</td><td>'+c.s2+'</td><td>'+total+'</td><td>'+share+'%</td></tr>';
+  }
+  html += '</tbody>';
+  document.getElementById('compTable').innerHTML = html;
+
+  // Share chart
+  const names = competitors.map(c=>c.name.substring(0,6));
+  const totals = competitors.map(c=>c.p4+c.p1+c.p02+c.s20+c.s10+c.s5+c.s2);
+  const shares = totals.map(t=>[t/grandTotal*100]);
+  const colors = competitors.map(c=>c.self?'#002060':'#4472C4');
+
+  const canvas = document.getElementById('shareChart');
+  if (canvas) {
+    const setup = setupCanvas(canvas); if(!setup) return; const {ctx,w,h} = setup;
+    const pad={t:20,r:20,b:60,l:50};
+    const n=names.length;
+    const barW=(w-pad.l-pad.r)/n*0.7;
+    const maxV=Math.max(...totals);
+    ctx.clearRect(0,0,w,h);
+
+    for (let i=0;i<n;i++) {
+      const x=pad.l+(w-pad.l-pad.r)/n*(i+0.5)-barW/2;
+      const bh=totals[i]/maxV*(h-pad.t-pad.b);
+      const y=h-pad.b-bh;
+      ctx.fillStyle=colors[i];
+      ctx.fillRect(x,y,barW,bh);
+      ctx.fillStyle='#333'; ctx.font='10px sans-serif'; ctx.textAlign='center';
+      ctx.fillText(names[i],x+barW/2,h-pad.b+14);
+      ctx.fillText(totals[i]+'台',x+barW/2,y-4);
+    }
+  }
+}
+
+function renderScenarioComparison(cf) {
+  // Calculate 3 scenarios
+  const scenarios = calcThreeScenarios();
+
+  document.getElementById('scenarioGrid').innerHTML = scenarios.map((sc,idx) => {
+    const cls = ['optimistic','standard','pessimistic'][idx];
+    const items = [
+      {label:'IRR', val:fmtPct(sc.irr||0)},
+      {label:'NPV', val:fmtOku(sc.npv)},
+      {label:'MIRR', val:fmtPct(sc.mirr||0)},
+      {label:'回収期間', val:sc.pp.total===Infinity?'10年超':sc.pp.years+'年'+sc.pp.months+'ヶ月'},
+      {label:'10年累積CF', val:fmtOku(sc.cumCF)},
+      {label:'初年度営業利益', val:fmtOku(sc.opProfit1)},
+      {label:'BEP', val:fmtPct1(sc.bep)}
+    ];
+    return '<div class="scenario-card '+cls+'"><h3>'+sc.name+'</h3>'+
+      items.map(it=>'<div class="scenario-item"><span>'+it.label+'</span><span class="val">'+it.val+'</span></div>').join('')+
+      '</div>';
+  }).join('');
+
+  // Scenario comparison chart
+  const labels = ['IRR(%)','NPV(億)','累積CF(億)','BEP(%)'];
+  const data = scenarios.map(sc => [
+    (sc.irr||0)*100,
+    sc.npv/100000000,
+    sc.cumCF/100000000,
+    sc.bep*100
+  ]);
+  drawBarChart('scenarioChart', labels, data, ['#00B050','#4472C4','#C00000']);
+}
+
+function calcThreeScenarios() {
+  const results = [];
+
+  // Save current params
+  const savedOverride = JSON.parse(JSON.stringify(P.yearlyOverride));
+  const savedInterest = P.finance.interest;
+
+  // Optimistic
+  P.yearlyOverride.occupancy = [-0.05,-0.03,-0.01,0,0,null,null,null,null,null];
+  P.yearlyOverride.hr = [0.02,0.02,null,null,null,null,null,null,null,null];
+  P.finance.interest = 0.015;
+  results.push(calcScenarioMetrics('楽観シナリオ'));
+
+  // Standard (restore)
+  P.yearlyOverride = JSON.parse(JSON.stringify(savedOverride));
+  P.finance.interest = savedInterest;
+  results.push(calcScenarioMetrics('標準シナリオ'));
+
+  // Pessimistic
+  P.yearlyOverride.occupancy = [-0.20,-0.12,-0.08,-0.05,-0.03,null,null,null,null,null];
+  P.yearlyOverride.hr = [0.05,0.03,0.03,null,null,null,null,null,null,null];
+  P.finance.interest = 0.025;
+  results.push(calcScenarioMetrics('悲観シナリオ'));
+
+  // Restore
+  P.yearlyOverride = JSON.parse(JSON.stringify(savedOverride));
+  P.finance.interest = savedInterest;
+
+  return results;
+}
+
+function calcScenarioMetrics(name) {
+  const cf = calcCashFlow();
+  const wacc = calcWACC();
+  const fcfs = cf.map(c=>c.fcf);
+  return {
+    name,
+    irr: calcIRR(fcfs),
+    npv: calcNPV(wacc, fcfs),
+    mirr: calcMIRR(fcfs, P.finance.interest, wacc),
+    pp: calcPaybackPeriod(cf),
+    cumCF: cf[10].cumCF,
+    opProfit1: cf[1].opProfit,
+    bep: calcBEP()
+  };
+}
+
+/* ============================================================
+   SCENARIO SAVE/LOAD (localStorage)
+   ============================================================ */
+function saveScenario() {
+  const name = document.getElementById('scenarioName').value.trim();
+  if (!name) { alert('シナリオ名を入力してください'); return; }
+  try {
+    const scenarios = JSON.parse(safeGetStorage('ma_scenarios', '{}'));
+    scenarios[name] = {
+      timestamp: new Date().toISOString(),
+      params: JSON.parse(JSON.stringify(P))
+    };
+    safeSetStorage('ma_scenarios', JSON.stringify(scenarios));
+  } catch(e) { alert('シナリオの保存に失敗しました'); return; }
+  refreshScenarioList();
+  document.getElementById('scenarioName').value = '';
+}
+
+function loadScenarioUI() {
+  const sel = document.getElementById('scenarioList');
+  const name = sel.value;
+  if (!name) return;
+  try {
+    const scenarios = JSON.parse(safeGetStorage('ma_scenarios', '{}'));
+    if (scenarios[name]) {
+      Object.assign(P, JSON.parse(JSON.stringify(scenarios[name].params)));
+      buildInputPanel();
+      recalcAll();
+    }
+  } catch(e) { alert('シナリオの読み込みに失敗しました'); }
+}
+
+function deleteScenario() {
+  const sel = document.getElementById('scenarioList');
+  const name = sel.value;
+  if (!name) return;
+  if (!confirm(name+'を削除しますか？')) return;
+  try {
+    const scenarios = JSON.parse(safeGetStorage('ma_scenarios', '{}'));
+    delete scenarios[name];
+    safeSetStorage('ma_scenarios', JSON.stringify(scenarios));
+  } catch(e) { alert('シナリオの削除に失敗しました'); return; }
+  refreshScenarioList();
+}
+
+function refreshScenarioList() {
+  const scenarios = JSON.parse(safeGetStorage('ma_scenarios', '{}'));
+  const sel = document.getElementById('scenarioList');
+  sel.innerHTML = '<option value="">-- シナリオ選択 --</option>';
+  for (const name of Object.keys(scenarios)) {
+    sel.innerHTML += '<option value="'+name+'">'+name+' ('+scenarios[name].timestamp.slice(0,10)+')</option>';
+  }
+}
+
+/* ============================================================
+   MODE TOGGLE & KEYBOARD NAV
+   ============================================================ */
+function toggleMode(mode) {
+  document.body.classList.toggle('present-mode', mode==='present');
+  // Resize charts
+  setTimeout(()=>recalcAll(), 100);
+}
+
+document.addEventListener('keydown', (e)=>{
+  if (!document.body.classList.contains('present-mode')) return;
+  const tabs = ['tab1','tab2','tab3','tab4','tab5','tab6','tab7'];
+  let current = 0;
+  for (let i=0;i<tabs.length;i++) {
+    if (document.getElementById(tabs[i]).checked) { current=i; break; }
+  }
+  if (e.key==='ArrowRight' && current<tabs.length-1) {
+    document.getElementById(tabs[current+1]).checked = true;
+    recalcAll();
+  }
+  if (e.key==='ArrowLeft' && current>0) {
+    document.getElementById(tabs[current-1]).checked = true;
+    recalcAll();
+  }
+});
+
+/* ============================================================
+   MAIN RECALC
+   ============================================================ */
+function recalcAll() {
+  const cf = calcCashFlow();
+  _lastCF = cf;
+  renderDashboard(cf);
+  renderCFTable(cf);
+  renderMetrics(cf);
+  renderStressTest(cf);
+  renderCompetitors();
+  renderScenarioComparison(cf);
+}
+
+/* ============================================================
+   INIT
+   ============================================================ */
+// タブ切替時にチャートを再描画（hidden→visibleでCanvas再取得が必要）
+let _lastCF = null;
+document.querySelectorAll('input[name="tab"]').forEach(radio=>{
+  radio.addEventListener('change', ()=>{
+    // 少し遅延してCanvas描画（CSS表示反映を待つ）
+    requestAnimationFrame(()=>{ setTimeout(()=>{
+      if (_lastCF) {
+        renderDashboard(_lastCF);
+        renderCFTable(_lastCF);
+        renderMetrics(_lastCF);
+        renderStressTest(_lastCF);
+        renderCompetitors();
+        renderScenarioComparison(_lastCF);
+      }
+    }, 50); });
+  });
+});
+
+window.addEventListener('DOMContentLoaded', ()=>{
+  buildInputPanel();
+  refreshScenarioList();
+  recalcAll();
+});
+
+window.addEventListener('resize', ()=>{
+  clearTimeout(window._resizeTimer);
+  window._resizeTimer = setTimeout(recalcAll, 200);
+});
+</script>
+</body>
+</html>
