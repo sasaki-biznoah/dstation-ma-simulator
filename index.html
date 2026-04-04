@@ -547,9 +547,9 @@ body.present-mode .judgment-panel { padding: 32px; }
    ============================================================ */
 .metrics-split {
   display: grid;
-  grid-template-columns: 60fr 40fr;
+  grid-template-columns: 1fr 1fr;
   gap: 24px;
-  align-items: start;
+  align-items: stretch;
   margin-top: 16px;
 }
 .metrics-split h3 {
@@ -589,8 +589,13 @@ body.present-mode .judgment-panel { padding: 32px; }
 .chart-container { margin: 10px 0; }
 .chart-container canvas { display: block; }
 
-/* ドーナツチャートコンテナをコンパクトに */
+/* ドーナツチャート */
+.donut-wrap { display:flex; flex-direction:column; justify-content:center; min-height:100%; }
 .donut-wrap canvas { height: 260px !important; }
+@media (min-width:1025px) {
+  .donut-wrap canvas { height: 450px !important; }
+  .donut-wrap h3 { text-align:center; }
+}
 
 /* ============================================================
    ZEBRA STRIPE
